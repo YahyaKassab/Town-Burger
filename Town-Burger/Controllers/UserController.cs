@@ -26,5 +26,15 @@ namespace Town_Burger.Controllers
                 return BadRequest(result);
             return Ok(result);
         }
+        [HttpPost("AddEmployee")]
+        public async Task<IActionResult> RegisterEmployeeAsync(RegisterEmployeeDto form)
+        {
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            var result = await _userService.RegisterEmployeeAsync(form);
+            if(form == null) return NotFound();
+            if(!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
     }
 }

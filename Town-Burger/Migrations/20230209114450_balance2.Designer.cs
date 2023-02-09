@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230209114450_balance2")]
+    partial class balance2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -190,48 +193,12 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<double>("DepositsDay")
-                        .HasColumnType("float");
-
-                    b.Property<double>("DepositsMonth")
-                        .HasColumnType("float");
-
-                    b.Property<double>("DepositsYear")
-                        .HasColumnType("float");
-
-                    b.Property<double>("EarningsDay")
-                        .HasColumnType("float");
-
-                    b.Property<double>("EarningsMonth")
-                        .HasColumnType("float");
-
-                    b.Property<double>("EarningsYear")
-                        .HasColumnType("float");
-
-                    b.Property<double>("MyBalance")
-                        .HasColumnType("float");
-
-                    b.Property<double>("SpendsDay")
-                        .HasColumnType("float");
-
-                    b.Property<double>("SpendsMonth")
-                        .HasColumnType("float");
-
-                    b.Property<double>("SpendsYear")
-                        .HasColumnType("float");
-
-                    b.Property<double>("TotalDeposits")
-                        .HasColumnType("float");
-
-                    b.Property<double>("TotalEarnings")
-                        .HasColumnType("float");
-
-                    b.Property<double>("TotalSpends")
+                    b.Property<double>("_balance")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Balances");
+                    b.ToTable("balances");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>
@@ -258,38 +225,6 @@ namespace TownBurger.Migrations
                         .IsUnique();
 
                     b.ToTable("Cart");
-                });
-
-            modelBuilder.Entity("Town_Burger.Models.CartItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CartId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ItemId")
-                        .HasColumnType("int");
-
-                    b.Property<double>("Price")
-                        .HasColumnType("float");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CartId");
-
-                    b.HasIndex("ItemId");
-
-                    b.ToTable("CartItem");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Deposit<Town_Burger.Models.Identity.User>", b =>
@@ -373,9 +308,6 @@ namespace TownBurger.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<byte[]>("Picture")
-                        .HasColumnType("varbinary(max)");
-
                     b.Property<long?>("Salary")
                         .HasColumnType("bigint");
 
@@ -454,6 +386,38 @@ namespace TownBurger.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Order");
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Responses.CartItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CartId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("float");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("ItemId");
+
+                    b.ToTable("CartItem");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Spend<Town_Burger.Models.Identity.User>", b =>
@@ -562,25 +526,6 @@ namespace TownBurger.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Town_Burger.Models.CartItem", b =>
-                {
-                    b.HasOne("Town_Burger.Models.Cart", "Cart")
-                        .WithMany("Items")
-                        .HasForeignKey("CartId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Town_Burger.Models.MenuItem", "Item")
-                        .WithMany()
-                        .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Cart");
-
-                    b.Navigation("Item");
-                });
-
             modelBuilder.Entity("Town_Burger.Models.Deposit<Town_Burger.Models.Identity.User>", b =>
                 {
                     b.HasOne("Town_Burger.Models.Identity.User", "Where")
@@ -597,6 +542,25 @@ namespace TownBurger.Migrations
                     b.HasOne("Town_Burger.Models.Identity.User", null)
                         .WithMany("Orders")
                         .HasForeignKey("UserId");
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Responses.CartItem", b =>
+                {
+                    b.HasOne("Town_Burger.Models.Cart", "Cart")
+                        .WithMany("Items")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Town_Burger.Models.MenuItem", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Spend<Town_Burger.Models.Identity.User>", b =>

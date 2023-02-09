@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Town_Burger.Models.Identity;
+using Town_Burger.Models.Responses;
 
 namespace Town_Burger.Models.Context
 {
@@ -37,5 +38,6 @@ namespace Town_Burger.Models.Context
 
 
         }
+        public DbSet<Balance> Balances { get; set; }
     }
 }

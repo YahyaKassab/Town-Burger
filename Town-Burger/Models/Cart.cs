@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Town_Burger.Models.Identity;
-using Town_Burger.Models.Responses;
 
 namespace Town_Burger.Models
 {

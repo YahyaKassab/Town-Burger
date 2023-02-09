@@ -10,7 +10,8 @@ namespace TownBurger.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-           // migrationBuilder.Sql("");
+            //add admin
+            //asign to admin role
         }
 
         /// <inheritdoc />

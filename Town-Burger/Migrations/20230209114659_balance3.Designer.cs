@@ -12,8 +12,8 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20230208230626_add-admin")]
-    partial class addadmin
+    [Migration("20230209114659_balance3")]
+    partial class balance3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -185,6 +185,22 @@ namespace TownBurger.Migrations
                     b.ToTable("Address");
                 });
 
+            modelBuilder.Entity("Town_Burger.Models.Balance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("_balance")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Balances");
+                });
+
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>
                 {
                     b.Property<int>("Id")
@@ -254,7 +270,7 @@ namespace TownBurger.Migrations
                     b.Property<DateTime?>("ContractEnds")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DaysOfWord")
+                    b.Property<string>("DaysOfWork")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")

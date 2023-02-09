@@ -1,14 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Town_Burger.Models.Responses
+namespace Town_Burger.Models
 {
     public class CartItem
     {
         public int Id { get; set; }
         [Required]
-        public MenuItem Item{ get;set; }
+        public MenuItem Item { get; set; }
 
-        public string? Description{ get; set; }
+        public string? Description { get; set; }
 
         public double Price { get; set; }
 

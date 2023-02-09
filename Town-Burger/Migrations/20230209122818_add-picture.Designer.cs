@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230209122818_add-picture")]
+    partial class addpicture
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -190,43 +193,7 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<double>("DepositsDay")
-                        .HasColumnType("float");
-
-                    b.Property<double>("DepositsMonth")
-                        .HasColumnType("float");
-
-                    b.Property<double>("DepositsYear")
-                        .HasColumnType("float");
-
-                    b.Property<double>("EarningsDay")
-                        .HasColumnType("float");
-
-                    b.Property<double>("EarningsMonth")
-                        .HasColumnType("float");
-
-                    b.Property<double>("EarningsYear")
-                        .HasColumnType("float");
-
                     b.Property<double>("MyBalance")
-                        .HasColumnType("float");
-
-                    b.Property<double>("SpendsDay")
-                        .HasColumnType("float");
-
-                    b.Property<double>("SpendsMonth")
-                        .HasColumnType("float");
-
-                    b.Property<double>("SpendsYear")
-                        .HasColumnType("float");
-
-                    b.Property<double>("TotalDeposits")
-                        .HasColumnType("float");
-
-                    b.Property<double>("TotalEarnings")
-                        .HasColumnType("float");
-
-                    b.Property<double>("TotalSpends")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
