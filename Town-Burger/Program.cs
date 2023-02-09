@@ -20,10 +20,11 @@ builder.Services.AddControllersWithViews()
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<Balance>();
+//builder.Services.AddSingleton<Balance>();
 builder.Services.AddTransient<IBalanceService, BalanceService>();
 builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddScoped<UserManager<User>>();
+builder.Services.AddTransient<UserManager<User>>();
+builder.Services.AddTransient<AppDbContext, AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddIdentity<User,IdentityRole>(options =>
 {

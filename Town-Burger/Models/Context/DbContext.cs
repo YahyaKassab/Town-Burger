@@ -19,15 +19,13 @@ namespace Town_Burger.Models.Context
             .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
             .AddJsonFile("appsettings.json")
             .Build();
-            optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+            optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging();
         }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
             builder.Entity<User>().ToTable("Users", "Security");
-            builder.Entity<Deposit<User>>().ToTable("Deposits");
-            builder.Entity<Spend<User>>().ToTable("Spends");
             builder.Entity<IdentityRole>().ToTable("Roles", "Security");
             builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles", "Security");
             builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims", "Security");
@@ -39,5 +37,7 @@ namespace Town_Burger.Models.Context
 
         }
         public DbSet<Balance> Balances { get; set; }
+        public DbSet<Deposit> Deposits { get; set; }
+        public DbSet<Spend> Spends { get; set; }
     }
 }

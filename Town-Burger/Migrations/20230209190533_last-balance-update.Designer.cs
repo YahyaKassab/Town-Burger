@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230209190533_last-balance-update")]
+    partial class lastbalanceupdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -179,7 +182,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Address");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Balance", b =>
@@ -204,7 +207,7 @@ namespace TownBurger.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Balances", (string)null);
+                    b.ToTable("Balances");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>
@@ -230,7 +233,7 @@ namespace TownBurger.Migrations
                     b.HasIndex("OrderId")
                         .IsUnique();
 
-                    b.ToTable("Cart", (string)null);
+                    b.ToTable("Cart");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.CartItem", b =>
@@ -262,7 +265,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("CartItem", (string)null);
+                    b.ToTable("CartItem");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Deposit", b =>
@@ -399,7 +402,7 @@ namespace TownBurger.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MenuItem", (string)null);
+                    b.ToTable("MenuItem");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Order", b =>
@@ -426,7 +429,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Order", (string)null);
+                    b.ToTable("Order");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Spend", b =>

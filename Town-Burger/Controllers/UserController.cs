@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using Town_Burger.Models.Dto;
 using Town_Burger.Services;
 
@@ -32,6 +33,16 @@ namespace Town_Burger.Controllers
             if(!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _userService.RegisterEmployeeAsync(form);
             if(form == null) return NotFound();
+            if(!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
+        [HttpPost("LoginEmail")]
+        public async Task<IActionResult> LoginAsync(LoginDto form)
+        {
+            if(!ModelState.IsValid) return BadRequest("Some Fields are not valid");
+            var result = await _userService.LoginAsync(form);
             if(!result.IsSuccess)
                 return BadRequest(result);
             return Ok(result);

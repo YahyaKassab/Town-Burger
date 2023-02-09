@@ -10,14 +10,13 @@ namespace TownBurger.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            //add admin
-            //asign to admin role
+            migrationBuilder.Sql("INSERT INTO [SECURITY].[USERROLES] (USERID,ROLEID) SELECT 'dff1bc71-b0e7-4018-a294-ef1380dcf728', ID FROM [SECURITY].[ROLES] ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            migrationBuilder.Sql("DELETE FROM [SECURITY].[USERROLES] WHERE USERID = 'dff1bc71-b0e7-4018-a294-ef1380dcf728'");
         }
     }
 }
