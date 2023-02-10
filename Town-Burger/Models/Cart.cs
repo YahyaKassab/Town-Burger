@@ -9,13 +9,13 @@ namespace Town_Burger.Models
 
         public IEnumerable<CartItem>? Items { get; set; }
         [Required]
-        public int OrderId { get; set; }
+        public int? OrderId { get; set; }
         [Required]
-        public Order Order { get; set; }
+        public Order? Order { get; set; }
         [Required]
-        public string CustomerId { get; set; }
+        public int? CustomerId { get; set; }
         [Required]
-        public User Customer { get; set; }
+        public Customer? Customer { get; set; }
 
     }
 }

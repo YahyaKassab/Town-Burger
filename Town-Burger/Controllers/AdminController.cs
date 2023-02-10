@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Town_Burger.Models.Context;
+using Town_Burger.Models.Dto;
 using Town_Burger.Models.Identity;
 using Town_Burger.Services;
 
@@ -14,12 +16,16 @@ namespace Town_Burger.Controllers
         private readonly IBalanceService _balanceService;
         private readonly IUserService _userService;
         private readonly UserManager<User> _userManager;
+        private readonly IEmployeeService _employeeService;
+        private readonly AppDbContext _context;
 
-        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager)
+        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context)
         {
             _balanceService = balanceService;
             _userService = userService;
             _userManager = userManager;
+            _employeeService = employeeService;
+            _context = context;
         }
 
 
@@ -61,28 +67,28 @@ namespace Town_Burger.Controllers
         }
 
 
-        [HttpPost("AddDeposit")]
-        public async Task<IActionResult> AddDeposit(string fromId, double amount)
-        {
-            var result = await _balanceService.AddDepositAsync(fromId, amount);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
+        //[HttpPost("AddDeposit")]
+        //public async Task<IActionResult> AddDeposit(string fromId, double amount)
+        //{
+        //    var result = await _balanceService.AddDepositAsync(fromId, amount);
+        //    if (result.IsSuccess)
+        //    {
+        //        return Ok(result);
+        //    }
+        //    return BadRequest(result);
+        //}
 
 
-        [HttpPost("AddSpend")]
-        public async Task<IActionResult> AddSpend(string fromId, double amount)
-        {
-            var result = await _balanceService.AddSpendAsync(fromId, amount);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
+        //[HttpPost("AddSpend")]
+        //public async Task<IActionResult> AddSpend(string fromId, double amount)
+        //{
+        //    var result = await _balanceService.AddSpendAsync(fromId, amount);
+        //    if (result.IsSuccess)
+        //    {
+        //        return Ok(result);
+        //    }
+        //    return BadRequest(result);
+        //}
 
 
         //Day
@@ -180,6 +186,17 @@ namespace Town_Burger.Controllers
         #endregion
 
         #region Employees
+        [HttpPost("AddEmployee")]
+        public async Task<IActionResult> RegisterEmployeeAsync(RegisterEmployeeDto form)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var result = await _employeeService.RegisterEmployeeAsync(form);
+            if (form == null) return NotFound();
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
         [HttpGet("GetUserById")]
         public async Task<IActionResult> GetUserById(string id)
         {
@@ -188,12 +205,21 @@ namespace Town_Burger.Controllers
                 return NotFound();
             return Ok(result);
         }
-
-
-        [HttpPost("UpdateUser")]
-        public async Task<IActionResult> UpdateUser(User user)
+        
+        [HttpGet("GetEmployeeById")]
+        public async Task<IActionResult> GetEmployeeById(int id)
         {
-            var result = await _userService.UpdateUserAsync(user);
+            var result = await _employeeService.GetEmployeeByIdAsync(id);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
+
+        [HttpPost("UpdateEmployee")]
+        public async Task<IActionResult> UpdateEmployee(Employee employee)
+        {
+            var result = await _employeeService.UpdateEmployeeAsync(employee);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -203,10 +229,10 @@ namespace Town_Burger.Controllers
         }
 
 
-        [HttpDelete("RemoveUser")]
-        public async Task<IActionResult> RemoveUser(string userId)
+        [HttpDelete("RemoveEmployee")]
+        public async Task<IActionResult> RemoveEmployee(int employeeId)
         {
-            var result = await _userService.DeleteUserAsync(userId);
+            var result = await _employeeService.DeleteEmployeeAsync(employeeId);
             if (result.IsSuccess)
             {
                 return Ok(result);

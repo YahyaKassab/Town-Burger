@@ -163,9 +163,8 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CustomerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Details")
                         .IsRequired()
@@ -179,7 +178,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Addresses", (string)null);
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Balance", b =>
@@ -215,22 +214,22 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("int");
 
-                    b.Property<int>("OrderId")
+                    b.Property<int?>("OrderId")
+                        .IsRequired()
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerId")
-                        .IsUnique();
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("OrderId")
                         .IsUnique();
 
-                    b.ToTable("Cart", (string)null);
+                    b.ToTable("Carts", (string)null);
                 });
 
             modelBuilder.Entity("Town_Burger.Models.CartItem", b =>
@@ -241,7 +240,8 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CartId")
+                    b.Property<int?>("CartId")
+                        .IsRequired()
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -262,7 +262,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("CartItem", (string)null);
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Deposit", b =>
@@ -276,8 +276,31 @@ namespace TownBurger.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("float");
 
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Time")
                         .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("Deposits", (string)null);
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Identity.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -285,9 +308,50 @@ namespace TownBurger.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
-                    b.ToTable("Deposits", (string)null);
+                    b.ToTable("Customers", (string)null);
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Identity.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ContractBegins")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ContractEnds")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DaysOfWork")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PictureSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("Salary")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Employees", (string)null);
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Identity.User", b =>
@@ -302,26 +366,12 @@ namespace TownBurger.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("ContractBegins")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ContractEnds")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DaysOfWork")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -345,12 +395,6 @@ namespace TownBurger.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<byte[]>("Picture")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<long?>("Salary")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -397,9 +441,13 @@ namespace TownBurger.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
-                    b.ToTable("MenuItem", (string)null);
+                    b.ToTable("MenuItems", (string)null);
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Order", b =>
@@ -410,6 +458,9 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DeliveredIn")
                         .HasColumnType("datetime2");
 
@@ -419,14 +470,41 @@ namespace TownBurger.Migrations
                     b.Property<int>("State")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("CustomerId");
 
-                    b.ToTable("Order", (string)null);
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Spend", b =>
@@ -440,16 +518,15 @@ namespace TownBurger.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("float");
 
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Time")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("EmployeeId");
 
                     b.ToTable("Spends", (string)null);
                 });
@@ -507,20 +584,18 @@ namespace TownBurger.Migrations
 
             modelBuilder.Entity("Town_Burger.Models.Address", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.User", "Customer")
+                    b.HasOne("Town_Burger.Models.Identity.Customer", "Customer")
                         .WithMany("Addresses")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CustomerId");
 
                     b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.User", "Customer")
-                        .WithOne("Cart")
-                        .HasForeignKey("Town_Burger.Models.Cart", "CustomerId")
+                    b.HasOne("Town_Burger.Models.Identity.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -556,9 +631,31 @@ namespace TownBurger.Migrations
 
             modelBuilder.Entity("Town_Burger.Models.Deposit", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.User", "User")
+                    b.HasOne("Town_Burger.Models.Identity.Customer", "Customer")
                         .WithMany("DepositsCustomer")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Identity.Customer", b =>
+                {
+                    b.HasOne("Town_Burger.Models.Identity.User", "User")
+                        .WithOne("Customer")
+                        .HasForeignKey("Town_Burger.Models.Identity.Customer", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Identity.Employee", b =>
+                {
+                    b.HasOne("Town_Burger.Models.Identity.User", "User")
+                        .WithOne("Employee")
+                        .HasForeignKey("Town_Burger.Models.Identity.Employee", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -567,20 +664,31 @@ namespace TownBurger.Migrations
 
             modelBuilder.Entity("Town_Burger.Models.Order", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.User", null)
+                    b.HasOne("Town_Burger.Models.Identity.Customer", "Customer")
                         .WithMany("Orders")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("CustomerId");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Review", b =>
+                {
+                    b.HasOne("Town_Burger.Models.Identity.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId");
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Spend", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.User", "User")
+                    b.HasOne("Town_Burger.Models.Identity.Employee", "Employee")
                         .WithMany("SpendsEmployee")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>
@@ -588,17 +696,25 @@ namespace TownBurger.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("Town_Burger.Models.Identity.User", b =>
+            modelBuilder.Entity("Town_Burger.Models.Identity.Customer", b =>
                 {
                     b.Navigation("Addresses");
-
-                    b.Navigation("Cart");
 
                     b.Navigation("DepositsCustomer");
 
                     b.Navigation("Orders");
+                });
 
+            modelBuilder.Entity("Town_Burger.Models.Identity.Employee", b =>
+                {
                     b.Navigation("SpendsEmployee");
+                });
+
+            modelBuilder.Entity("Town_Burger.Models.Identity.User", b =>
+                {
+                    b.Navigation("Customer");
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Order", b =>

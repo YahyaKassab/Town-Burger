@@ -11,10 +11,10 @@ namespace Town_Burger.Models
         public string? Description { get; set; }
 
         public double Price { get; set; }
-
+        [Required]
         public int Quantity { get; set; }
         [Required]
-        public int CartId { get; set; }
+        public int? CartId { get; set; }
         [Required]
         public Cart Cart { get; set; }
     }

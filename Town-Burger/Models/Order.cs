@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Town_Burger.Models.Identity;
 
 namespace Town_Burger.Models
 {
@@ -15,6 +16,11 @@ namespace Town_Burger.Models
         public DateTime? DeliveredIn { get; set; }
 
         public int State { get; set; } = 0;
+
+        public int? CustomerId { get; set; }
+
+        public Customer Customer { get; set; }
+
     }
 
   

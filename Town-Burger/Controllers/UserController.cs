@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using Town_Burger.Models.Dto;
+using Town_Burger.Models.Identity;
 using Town_Burger.Services;
 
 namespace Town_Burger.Controllers
@@ -11,32 +12,26 @@ namespace Town_Burger.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-
-        public UserController(IUserService userService)
+        private readonly IEmployeeService _employeeService;
+        private readonly ICustomerService _customerService;
+        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService)
         {
             _userService = userService;
+            _employeeService = employeeService;
+            _customerService = customerService;
         }
 
         [HttpPost("AddCustomer")]
         public async Task<IActionResult> RegisterCustomerAsync(RegisterCustomerDto form)
         {
-            if(!ModelState.IsValid) return BadRequest(ModelState);
-            var result = await _userService.RegisterCustomerAsync(form);
-            if(form == null) return NotFound();
-            if(!result.IsSuccess)
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (form == null) return NotFound();
+            var result = await _customerService.RegisterCustomerAsync(form);
+            if (!result.IsSuccess)
                 return BadRequest(result);
             return Ok(result);
         }
-        [HttpPost("AddEmployee")]
-        public async Task<IActionResult> RegisterEmployeeAsync(RegisterEmployeeDto form)
-        {
-            if(!ModelState.IsValid) return BadRequest(ModelState);
-            var result = await _userService.RegisterEmployeeAsync(form);
-            if(form == null) return NotFound();
-            if(!result.IsSuccess)
-                return BadRequest(result);
-            return Ok(result);
-        }
+
 
         [HttpPost("LoginEmail")]
         public async Task<IActionResult> LoginAsync(LoginDto form)
@@ -46,6 +41,41 @@ namespace Town_Burger.Controllers
             if(!result.IsSuccess)
                 return BadRequest(result);
             return Ok(result);
+        }
+
+        [HttpGet("GetCustomerById")]
+        public async Task<IActionResult> GetCustomerById(int id)
+        {
+            var result = await _customerService.GetCustomerByIdAsync(id);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
+
+        [HttpPost("UpdateCustomer")]
+        public async Task<IActionResult> UpdateCustomer(Customer customer)
+        {
+            var result = await _customerService.UpdateCustomerAsync(customer);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+
+        }
+
+
+        [HttpDelete("RemoveCustomer")]
+        public async Task<IActionResult> RemoveCustomer(int cusomerId)
+        {
+            var result = await _customerService.DeleteCustomerAsync(cusomerId);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+
         }
     }
 }

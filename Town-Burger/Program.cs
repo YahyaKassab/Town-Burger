@@ -23,10 +23,11 @@ builder.Services.AddSwaggerGen();
 //builder.Services.AddSingleton<Balance>();
 builder.Services.AddTransient<IBalanceService, BalanceService>();
 builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddTransient<UserManager<User>>();
+builder.Services.AddTransient<IEmployeeService, EmployeeService>();
+builder.Services.AddTransient<ICustomerService, CustomerService>();
 builder.Services.AddTransient<AppDbContext, AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>();
-builder.Services.AddIdentity<User,IdentityRole>(options =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;

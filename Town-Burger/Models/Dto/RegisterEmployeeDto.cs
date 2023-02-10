@@ -25,6 +25,6 @@ namespace Town_Burger.Models.Dto
         public string? DaysOfWork { get; set; } = null;
         public IEnumerable<Deposit>? SpendsEmployee { get; set; } = null;
 
-        public byte[]? Picture { get; set; } = null;
+        public string? PictureSource { get; set; } = null;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Town_Burger.Models.Identity;
 
 namespace Town_Burger.Models
 {
@@ -11,5 +12,9 @@ namespace Town_Burger.Models
         public string Description { get; set; }
         [Range(0, 5)]
         public double Rating { get; set; }
+
+        public int? CustomerId { get; set; }
+
+        public Customer Customer { get; set; }
     }
 }

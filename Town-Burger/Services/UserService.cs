@@ -16,15 +16,13 @@ namespace Town_Burger.Services
 {
     public interface IUserService
     {
-        Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form);
-        Task<GenericResponse<IEnumerable<IdentityError>>> RegisterEmployeeAsync(RegisterEmployeeDto form);
+        
+        
         Task<GenericResponse<User>> AddToRole(string userId, string roleName);
         Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName);
-        Task<GenericResponse<User>> UpdateUserAsync(User user);
-        Task<GenericResponse<string>> DeleteUserAsync(string userId);
+        Task<GenericResponse<(string token, DateTime expire)>> LoginAsync(LoginDto form);
         Task<GenericResponse<string>> ConfirmEmailAsync(string email);
         Task<GenericResponse<string>> ForgetPasswordAsync(string email);
-        Task<GenericResponse<(string token, DateTime expire)>> LoginAsync(LoginDto form);
     }
     public class UserService : IUserService
     {
@@ -38,141 +36,59 @@ namespace Town_Burger.Services
             _context = context;
         }
 
-        public async Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form)
+       
+
+        //modify customer and employee services
+
+
+        public async Task<GenericResponse<User>> AddToRole(string userId, string roleName)
         {
-            if (form == null)
-                return new GenericResponse<IEnumerable<IdentityError>>()
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || roleName == null)
+                return new GenericResponse<User>
                 {
                     IsSuccess = false,
-                    Message = "Some Required Fields are left empty"
+                    Message = "User or RoleName are null"
                 };
-            if (form.Password != form.ConfirmPassword)
-                return new GenericResponse<IEnumerable<IdentityError>>
-                {
-                    IsSuccess = false,
-                    Message = "Passwords dont match"
-                };
-            User customer;
-            if (form.Address != null)
-                customer = new User()
-                {
-                    FullName = form.FullName,
-                    Email = form.Email,
-                    PhoneNumber = form.PhoneNumber,
-                    Addresses = new Address[] { form.Address }
-                };
-            else 
-                customer = new User() { 
-                FullName = form.FullName,
-                Email = form.Email,
-                PhoneNumber = form.PhoneNumber,
-                };
-
-            var result = await _userManager.CreateAsync(customer, form.Password);
-            if (!result.Succeeded)
+            var result = await _userManager.AddToRoleAsync(user, roleName);
+            if(result.Succeeded)
             {
-
-                return new GenericResponse<IEnumerable<IdentityError>>()
+                return new GenericResponse<User>
                 {
-                    IsSuccess = false,
-                    Message = "Failed To Create The User",
-                    Result = result.Errors
+                    IsSuccess = true,
+                    Message = $"User Added To Role {roleName.ToUpper()} Successfully",
+                    Result = user
                 };
             }
-
-            //succeeded
-            await _userManager.AddToRoleAsync(customer, _configuration["DefaultRole"]);
-            return new GenericResponse<IEnumerable<IdentityError>>()
+            return new GenericResponse<User>
             {
-                IsSuccess = true,
-                Message = "User Created Successfully",
+                IsSuccess = false,
+                Message = "Failed To add to the role"
             };
         }
-
-        public async Task<GenericResponse<IEnumerable<IdentityError>>> RegisterEmployeeAsync(RegisterEmployeeDto form)
+        public async Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName)
         {
-
-            if (form == null)
-                return new GenericResponse<IEnumerable<IdentityError>>()
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || roleName == null)
+                return new GenericResponse<User>
                 {
                     IsSuccess = false,
-                    Message = "Some Required Fields are left empty"
+                    Message = "User or RoleName are null"
                 };
-            if (form.Password != form.ConfirmPassword)
-                return new GenericResponse<IEnumerable<IdentityError>>
+            var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                return new GenericResponse<User>
                 {
-                    IsSuccess = false,
-                    Message = "Passwords dont match"
-                };
-            User employee;
-            if(form.Picture == null)
-            {
-                if(form.DaysOfWork == null)
-                    employee = new User()
-                    {
-                        FullName = form.FullName,
-                        Email = form.Email,
-                        PhoneNumber = form.PhoneNumber,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds
-                    };
-                else
-                    employee = new User() 
-                    {
-                        FullName = form.FullName,
-                        Email = form.Email,
-                        PhoneNumber = form.PhoneNumber,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                        DaysOfWork = form.DaysOfWork 
-                    };
-            }
-            else
-            {
-                if (form.DaysOfWork == null)
-                    employee = new User()
-                    {
-                        FullName = form.FullName,
-                        Email = form.Email,
-                        PhoneNumber = form.PhoneNumber,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                        Picture = form.Picture
-                    };
-                else
-                    employee = new User()
-                    {
-                        FullName = form.FullName,
-                        Email = form.Email,
-                        PhoneNumber = form.PhoneNumber,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                        DaysOfWork = form.DaysOfWork,
-                        Picture = form.Picture
-                    };
-            }
-            var result = await _userManager.CreateAsync(employee, form.Password);
-            if (!result.Succeeded)
-            {
-
-                return new GenericResponse<IEnumerable<IdentityError>>()
-                {
-                    IsSuccess = false,
-                    Message = "Failed To Create The User",
-                    Result = result.Errors
+                    IsSuccess = true,
+                    Message = $"User Removed From Role {roleName.ToUpper()} Successfully",
+                    Result = user
                 };
             }
-
-            //succeeded
-            await _userManager.AddToRoleAsync(employee, "Employee");
-            return new GenericResponse<IEnumerable<IdentityError>>()
+            return new GenericResponse<User>
             {
-                IsSuccess = true,
-                Message = "User Created Successfully",
+                IsSuccess = false,
+                Message = "Failed To Remove from the role"
             };
         }
 
@@ -231,65 +147,6 @@ namespace Town_Burger.Services
 
         }
 
-        public async Task<GenericResponse<User>> UpdateUserAsync(User user)
-        {
-            if (user == null)
-                return new GenericResponse<User>()
-                {
-                    IsSuccess = false,
-                    Message = "User Is null"
-                };
-            try
-            {
-                _context.Entry(user).State = EntityState.Detached;
-                var result = _context.Users.Update(user);
-                await _context.SaveChangesAsync();
-                return new GenericResponse<User>()
-                {
-                    IsSuccess = true,
-                    Message = "User Updated Successfully",
-                    Result = user
-                };
-            }catch(Exception ex)
-            {
-                return new GenericResponse<User>()
-                {
-                    IsSuccess = false,
-                    Message = "failed To Update the user",
-                    Errors = new[] { ex.Message.ToString() }
-                };
-            }
-        }
-
-        public async Task<GenericResponse<string>> DeleteUserAsync(string userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-                return new GenericResponse<string>()
-                {
-                    IsSuccess = false,
-                    Message = "User Is null"
-                };
-            try
-            {
-                var result = await _userManager.DeleteAsync(user);
-                return new GenericResponse<string>()
-                {
-                    IsSuccess = true,
-                    Message = "User Deleted Successfully",
-                    Result = "Success"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new GenericResponse<string>()
-                {
-                    IsSuccess = false,
-                    Message = "failed To Delete the user",
-                    Errors = new[] { ex.Message.ToString() }
-                };
-            }
-        }
 
         public async Task<GenericResponse<string>> ConfirmEmailAsync(string email)
         {
@@ -301,57 +158,7 @@ namespace Town_Burger.Services
             throw new NotImplementedException();
         }
 
-        public async Task<GenericResponse<User>> AddToRole(string userId, string roleName)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || roleName == null)
-                return new GenericResponse<User>
-                {
-                    IsSuccess = false,
-                    Message = "User or RoleName are null"
-                };
-            var result = await _userManager.AddToRoleAsync(user, roleName);
-            if(result.Succeeded)
-            {
-                return new GenericResponse<User>
-                {
-                    IsSuccess = true,
-                    Message = $"User Added To Role {roleName.ToUpper()} Successfully",
-                    Result = user
-                };
-            }
-            return new GenericResponse<User>
-            {
-                IsSuccess = false,
-                Message = "Failed To add to the role"
-            };
-        }
 
-        public async Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || roleName == null)
-                return new GenericResponse<User>
-                {
-                    IsSuccess = false,
-                    Message = "User or RoleName are null"
-                };
-            var result = await _userManager.RemoveFromRoleAsync(user, roleName);
-            if (result.Succeeded)
-            {
-                return new GenericResponse<User>
-                {
-                    IsSuccess = true,
-                    Message = $"User Removed From Role {roleName.ToUpper()} Successfully",
-                    Result = user
-                };
-            }
-            return new GenericResponse<User>
-            {
-                IsSuccess = false,
-                Message = "Failed To Remove from the role"
-            };
-        }
     }
 
 }
