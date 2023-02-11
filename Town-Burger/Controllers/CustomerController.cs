@@ -19,6 +19,7 @@ namespace Town_Burger.Controllers
         [HttpPost("AddAddress")]
         public async Task<IActionResult> AddAddress(AddressDto address)
         {
+            // not adding
             var result = await _customerService.AddAddressAsync(address);
             if (result.IsSuccess)
             {
