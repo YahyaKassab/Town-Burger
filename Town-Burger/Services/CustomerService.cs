@@ -34,55 +34,50 @@ namespace Town_Burger.Services
                     IsSuccess = false,
                     Message = "Some Required Fields are left empty"
                 };
+
             if (form.Password != form.ConfirmPassword)
                 return new GenericResponse<IEnumerable<IdentityError>>
                 {
                     IsSuccess = false,
                     Message = "Passwords dont match"
                 };
-            User user = new User()
-            {
-                Email = form.Email,
-                UserName = form.Email,
-                PhoneNumber = form.PhoneNumber,
-            };
-            var email = await _userManager.FindByEmailAsync(user.Email);
-            if (email != null)
-                return new GenericResponse<IEnumerable<IdentityError>>
-                {
-                    IsSuccess = false,
-                    Message = "Email Already Exists"
-                };
-            var username = await _userManager.FindByNameAsync(user.UserName);
-            if (username != null)
-                return new GenericResponse<IEnumerable<IdentityError>>
-                {
-                    IsSuccess = false,
-                    Message = "Username Already Exists"
-                };
 
+            //form isnt null
+            //passwords match
+
+            //my customer
             Customer customer;
             if (form.Address == null)
             {
                 customer = new Customer()
                 {
                     FullName = form.FullName,
-                    User = user,
-                };
+                    Cart = new Cart()
+                    };
+              
             }
             else
             {
                 customer = new Customer()
                 {
                     FullName = form.FullName,
-                    User = user,
-                    Addresses = new Address[] {form.Address}
+                    Addresses = new Address[] {form.Address},
+                    Cart = new Cart()
                 };
             }
+
+            //create the user along with the employee
+            User user = new User()
+            {
+                Email = form.Email,
+                UserName = form.Email,
+                PhoneNumber = form.PhoneNumber,
+                Customer = customer
+            };
+
+
+            var result = await _userManager.CreateAsync(user);
             //succeeded
-            
-            var result2 = await _context.Customers.AddAsync(customer);
-            var result3 = await _context.SaveChangesAsync();
             await _userManager.AddToRoleAsync(user, "Customer");
             return new GenericResponse<IEnumerable<IdentityError>>()
             {
@@ -100,7 +95,7 @@ namespace Town_Burger.Services
                 };
             try
             {
-                var result = _context.Customers.Update(customer);
+                var result = _context.Update(customer);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Customer>()
                 {
@@ -144,24 +139,28 @@ namespace Town_Burger.Services
         }
         public async Task<GenericResponse<string>> DeleteCustomerAsync(int customerId)
         {
+
             var customer = await _context.Customers.FirstOrDefaultAsync(e => e.Id == customerId);
+
+
             if (customer == null)
-                return new GenericResponse<string>()
+                return new GenericResponse<string>
                 {
                     IsSuccess = false,
-                    Message = "Customer Is null"
+                    Message = "Customer Not found"
                 };
+
+
             var user = await _userManager.FindByIdAsync(customer.UserId);
+
             try
             {
-                var result = _context.Customers.Remove(customer);
-                await _context.SaveChangesAsync();
                 await _userManager.DeleteAsync(user);
                 return new GenericResponse<string>()
                 {
                     IsSuccess = true,
                     Message = "Customer Deleted Successfully",
-                    Result = "Employee"
+                    Result = "Success"
                 };
             }
             catch (Exception ex)
@@ -169,7 +168,7 @@ namespace Town_Burger.Services
                 return new GenericResponse<string>()
                 {
                     IsSuccess = false,
-                    Message = "failed To Delete the Employee",
+                    Message = "failed To Delete the Customer",
                     Errors = new[] { ex.Message.ToString() }
                 };
             }

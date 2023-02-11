@@ -10,10 +10,14 @@ namespace Town_Burger.Models
         public string Title { get; set; }
         [Required]
         public string Type { get; set; }
-        public string? Description { get; set; }
-        public byte[]? Image{ get; set; }
+        public string Description { get; set; }
+        public string? ImageSource{ get; set; }
         [Required]
         public double Price { get; set; }
+
+        public int? CartItemId { get; set; }
+
+        public CartItem? CarItem { get; set; }
 
 
     }

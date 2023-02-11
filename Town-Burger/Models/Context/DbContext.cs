@@ -41,7 +41,6 @@ namespace Town_Burger.Models.Context
         public DbSet<Spend> Spends { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Cart> Carts { get; set; }
-        public DbSet<CartItem> CartItems { get; set; }
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<Order> Orders{ get; set; }
         public DbSet<Review> Reviews{ get; set; }

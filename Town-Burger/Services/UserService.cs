@@ -23,6 +23,7 @@ namespace Town_Burger.Services
         Task<GenericResponse<(string token, DateTime expire)>> LoginAsync(LoginDto form);
         Task<GenericResponse<string>> ConfirmEmailAsync(string email);
         Task<GenericResponse<string>> ForgetPasswordAsync(string email);
+        Task<GenericResponse<string>> DeleteUserAsync(string userId);
     }
     public class UserService : IUserService
     {
@@ -156,6 +157,30 @@ namespace Town_Burger.Services
         public async Task<GenericResponse<string>> ForgetPasswordAsync(string email)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<GenericResponse<string>> DeleteUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            try
+            {
+                await _userManager.DeleteAsync(user);
+                return new GenericResponse<string>()
+                {
+                    IsSuccess = true,
+                    Message = "User Deleted Successfully",
+                    Result = "Success"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse<string>()
+                {
+                    IsSuccess = false,
+                    Message = "failed To Delete the User",
+                    Errors = new[] { ex.Message.ToString() }
+                };
+            }
         }
 
 

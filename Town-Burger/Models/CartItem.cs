@@ -8,14 +8,12 @@ namespace Town_Burger.Models
         [Required]
         public MenuItem Item { get; set; }
 
-        public string? Description { get; set; }
+        public string Description { get; set; }
 
-        public double Price { get; set; }
         [Required]
         public int Quantity { get; set; }
         [Required]
-        public int? CartId { get; set; }
-        [Required]
+        public int CartId { get; set; }
         public Cart Cart { get; set; }
     }
 }

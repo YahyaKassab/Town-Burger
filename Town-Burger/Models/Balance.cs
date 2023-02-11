@@ -18,6 +18,7 @@ namespace Town_Burger.Models
     public class Spend
     {
         public int Id { get; set; }
+        public int EmployeeId { get; set; }
         [Required]
         public Employee Employee{ get; set; }
         [Required]
@@ -29,6 +30,7 @@ namespace Town_Burger.Models
     public class Deposit
     {
         public int Id { get; set; }
+        public int CustomerId { get; set; }
         [Required]
         public Customer Customer { get; set; }
         [Required]

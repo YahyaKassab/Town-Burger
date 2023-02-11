@@ -32,34 +32,18 @@ namespace Town_Burger.Services
                     IsSuccess = false,
                     Message = "Some Required Fields are left empty"
                 };
+
             if (form.Password != form.ConfirmPassword)
                 return new GenericResponse<IEnumerable<IdentityError>>
                 {
                     IsSuccess = false,
                     Message = "Passwords dont match"
                 };
-            User user = new User()
-            {
-                Email= form.Email,
-                UserName = form.Email,
-                PhoneNumber= form.PhoneNumber,
-            };
 
-            var email = await _userManager.FindByEmailAsync(user.Email);
-            if (email != null)
-                return new GenericResponse<IEnumerable<IdentityError>>
-                {
-                    IsSuccess = false,
-                    Message = "Email Already Exists"
-                };
-            var username = await _userManager.FindByNameAsync(user.UserName);
-            if (username != null)
-                return new GenericResponse<IEnumerable<IdentityError>>
-                {
-                    IsSuccess = false,
-                    Message = "Username Already Exists"
-                };
+            //form isnt null
+            //passwords match
 
+            //my employee
             Employee employee;
             if (form.PictureSource == null)
             {
@@ -70,7 +54,6 @@ namespace Town_Burger.Services
                         Salary = form.Salary,
                         ContractBegins = form.ContractBegins,
                         ContractEnds = form.ContractEnds,
-                        User = user,
                     };
                 else
                     employee = new Employee()
@@ -80,7 +63,6 @@ namespace Town_Burger.Services
                         ContractBegins = form.ContractBegins,
                         ContractEnds = form.ContractEnds,
                         DaysOfWork = form.DaysOfWork,
-                        User = user,
                     };
             }
             else
@@ -93,7 +75,6 @@ namespace Town_Burger.Services
                         ContractBegins = form.ContractBegins,
                         ContractEnds = form.ContractEnds,
                         PictureSource = form.PictureSource,
-                        User = user,
                     };
                 else
                     employee = new Employee()
@@ -104,12 +85,21 @@ namespace Town_Burger.Services
                         ContractEnds = form.ContractEnds,
                         DaysOfWork = form.DaysOfWork,
                         PictureSource = form.PictureSource,
-                        User = user,
                     };
             }
+
+            //create the user along with the employee
+            User user = new User()
+            {
+                Email= form.Email,
+                UserName = form.Email,
+                PhoneNumber= form.PhoneNumber,
+                Employee = employee
+            };
+            
+
+            var result = await _userManager.CreateAsync(user);
             //succeeded
-            var result2 = await _context.Employees.AddAsync(employee);
-            var result3 = await _context.SaveChangesAsync();
             await _userManager.AddToRoleAsync(user, "Employee");
             return new GenericResponse<IEnumerable<IdentityError>>()
             {
@@ -127,7 +117,7 @@ namespace Town_Burger.Services
                 };
             try
             {
-                var result = _context.Employees.Update(employee);
+                _context.Update(employee);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Employee>()
                 {
@@ -172,23 +162,26 @@ namespace Town_Burger.Services
         public async Task<GenericResponse<string>> DeleteEmployeeAsync(int employeeId)
         {
             var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
+
+
             if (employee == null)
-                return new GenericResponse<string>()
+                return new GenericResponse<string>
                 {
                     IsSuccess = false,
-                    Message = "Customer Is null"
+                    Message = "Employee Not found"
                 };
+
+
             var user = await _userManager.FindByIdAsync(employee.UserId);
+
             try
             {
-                var result = _context.Employees.Remove(employee);
-                await _context.SaveChangesAsync();
                 await _userManager.DeleteAsync(user);
                 return new GenericResponse<string>()
                 {
                     IsSuccess = true,
-                    Message = "Customer Deleted Successfully",
-                    Result = "Employee"
+                    Message = "User Deleted Successfully",
+                    Result = "Success"
                 };
             }
             catch (Exception ex)

@@ -13,7 +13,7 @@ namespace Town_Burger.Models
         [Range(0, 5)]
         public double Rating { get; set; }
 
-        public int? CustomerId { get; set; }
+        public int CustomerId { get; set; }
 
         public Customer Customer { get; set; }
     }

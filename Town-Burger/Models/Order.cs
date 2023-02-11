@@ -17,7 +17,7 @@ namespace Town_Burger.Models
 
         public int State { get; set; } = 0;
 
-        public int? CustomerId { get; set; }
+        public int CustomerId { get; set; }
 
         public Customer Customer { get; set; }
 

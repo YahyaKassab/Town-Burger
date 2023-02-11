@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using Town_Burger.Models.Context;
 using Town_Burger.Models.Dto;
 using Town_Burger.Models.Identity;
 using Town_Burger.Services;
@@ -14,15 +16,17 @@ namespace Town_Burger.Controllers
         private readonly IUserService _userService;
         private readonly IEmployeeService _employeeService;
         private readonly ICustomerService _customerService;
-        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService)
+        private readonly AppDbContext _context;
+        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService, AppDbContext context)
         {
             _userService = userService;
             _employeeService = employeeService;
             _customerService = customerService;
+            _context = context;
         }
 
         [HttpPost("AddCustomer")]
-        public async Task<IActionResult> RegisterCustomerAsync(RegisterCustomerDto form)
+        public async Task<IActionResult> RegisterCustomerAsync([FromBody]RegisterCustomerDto form)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (form == null) return NotFound();
@@ -31,8 +35,6 @@ namespace Town_Burger.Controllers
                 return BadRequest(result);
             return Ok(result);
         }
-
-
         [HttpPost("LoginEmail")]
         public async Task<IActionResult> LoginAsync(LoginDto form)
         {

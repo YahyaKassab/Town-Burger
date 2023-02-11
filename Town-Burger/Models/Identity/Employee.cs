@@ -14,7 +14,7 @@ namespace Town_Burger.Models.Identity
         public DateTime? ContractBegins { get; set; }
         public DateTime? ContractEnds { get; set; }
         public string? DaysOfWork { get; set; }
-        public IEnumerable<Spend>? SpendsEmployee { get; set; }
+        public ICollection<Spend>? SpendsEmployee { get; set; }
         public string? PictureSource { get; set; }
         [Required]
         public string UserId { get; set; }
