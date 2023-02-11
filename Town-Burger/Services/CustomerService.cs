@@ -12,6 +12,8 @@ namespace Town_Burger.Services
     public interface ICustomerService
     {
         Task<GenericResponse<Address>> AddAddressAsync(AddressDto address);
+        GenericResponse<Address> UpdateAddress(Address address);
+        Task<GenericResponse<string>> DeleteAddressAsync(int addressId);
         Task<GenericResponse<Customer>> GetCustomerByIdAsync(int id);
         Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form);
         Task<GenericResponse<Customer>> UpdateCustomerAsync(Customer customer);
@@ -47,25 +49,13 @@ namespace Town_Burger.Services
             //passwords match
 
             //my customer
-            Customer customer;
-            if (form.Address == null)
-            {
-                customer = new Customer()
+            Customer customer = new Customer()
                 {
                     FullName = form.FullName,
                     Cart = new Cart()
                     };
               
-            }
-            else
-            {
-                customer = new Customer()
-                {
-                    FullName = form.FullName,
-                    Addresses = new Address[] {form.Address},
-                    Cart = new Cart()
-                };
-            }
+         
 
             //create the user along with the employee
             User user = new User()
@@ -188,6 +178,7 @@ namespace Town_Burger.Services
                     Details = address.Details,
                 };
                 var result = await _context.Addresses.AddAsync(_address);
+                await _context.SaveChangesAsync();
                 return new GenericResponse<Address>()
                 {
                     IsSuccess = true,
@@ -203,6 +194,60 @@ namespace Town_Burger.Services
                 };
             }
 
+        }
+
+        public GenericResponse<Address> UpdateAddress(Address address)
+        {
+            try
+            {
+                var result = _context.Update(address);
+                _context.SaveChanges();
+                return new GenericResponse<Address>()
+                {
+                    IsSuccess = true,
+                    Message = "Address Updated Successfully",
+                    Result = address
+                };
+            }
+            catch(Exception ex )
+            {
+                return new GenericResponse<Address>()
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
+        }
+
+        public async Task<GenericResponse<string>> DeleteAddressAsync(int addressId)
+        {
+            try
+            {
+                var address = await _context.Addresses.FindAsync(addressId);
+                if (address == null)
+                    return new GenericResponse<string>()
+                    {
+                        IsSuccess = false,
+                        Message = "Address Doesnt exist"
+                    };
+                _context.Remove(address);
+                await _context.SaveChangesAsync();
+                return new GenericResponse<string>()
+                {
+                    IsSuccess = true,
+                    Message = "Address Deleted Successfully"
+                };
+
+            }
+            catch(Exception ex)
+            {
+                return new GenericResponse<string>()
+                {
+                    IsSuccess = false,
+                    Message = "Delete Failed",
+                    Result = ex.Message,
+                };
+            }
         }
     }
 }

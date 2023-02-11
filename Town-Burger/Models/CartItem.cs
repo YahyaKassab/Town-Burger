@@ -5,6 +5,7 @@ namespace Town_Burger.Models
     public class CartItem
     {
         public int Id { get; set; }
+        public int MenuItemId { get; set; }
         [Required]
         public MenuItem Item { get; set; }
 

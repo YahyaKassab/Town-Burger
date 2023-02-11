@@ -16,6 +16,5 @@ namespace Town_Burger.Models.Dto
         [Required]
         public string ConfirmPassword { get; set; }
         
-        public Address? Address { get; set; } = null;
     }
 }

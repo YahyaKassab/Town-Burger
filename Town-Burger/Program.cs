@@ -26,6 +26,7 @@ builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddTransient<ICustomerService, CustomerService>();
 builder.Services.AddTransient<IOrdersService, OrdersService>();
+builder.Services.AddTransient<IMenuService, MenuService>();
 builder.Services.AddTransient<AppDbContext, AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>();
 builder.Services.AddIdentity<User, IdentityRole>(options =>
