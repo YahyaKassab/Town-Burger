@@ -71,7 +71,7 @@ namespace Town_Burger.Services
                 return new GenericResponse<Cart>
                 {
                     IsSuccess = false,
-                    Message = "User Doesnt exist",
+                    Message = "Cart Doesnt exist",
                 };
             return new GenericResponse<Cart>
             {

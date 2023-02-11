@@ -11,6 +11,7 @@ namespace Town_Burger.Services
 {
     public interface ICustomerService
     {
+        Task<GenericResponse<Address>> AddAddressAsync(AddressDto address);
         Task<GenericResponse<Customer>> GetCustomerByIdAsync(int id);
         Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form);
         Task<GenericResponse<Customer>> UpdateCustomerAsync(Customer customer);
@@ -172,6 +173,36 @@ namespace Town_Burger.Services
                     Errors = new[] { ex.Message.ToString() }
                 };
             }
+        }
+
+        public async Task<GenericResponse<Address>> AddAddressAsync(AddressDto address)
+        {
+            try
+            {
+                var customer = await _context.Customers.FindAsync(address.CustomerId);
+                var _address = new Address
+                {
+                    CustomerId = address.CustomerId,
+                    Customer = customer,
+                    Street = address.Street,
+                    Details = address.Details,
+                };
+                var result = await _context.Addresses.AddAsync(_address);
+                return new GenericResponse<Address>()
+                {
+                    IsSuccess = true,
+                    Message = "Address Added Successfully",
+                    Result = _address
+                };
+            }catch(Exception ex)
+            {
+                return new GenericResponse<Address>()
+                {
+                    IsSuccess = false,
+                    Message = "Failed to add the address"
+                };
+            }
+
         }
     }
 }
