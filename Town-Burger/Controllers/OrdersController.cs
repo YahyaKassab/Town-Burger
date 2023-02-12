@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Town_Burger.Models;
+using Town_Burger.Models.Dto;
 using Town_Burger.Services;
 
 namespace Town_Burger.Controllers
@@ -31,6 +32,20 @@ namespace Town_Burger.Controllers
         {
             var result = await _ordersService.UpdateCartAsync(cart);
             if(result.IsSuccess )
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        [HttpPost("PlaceOrder")]
+        public async Task<IActionResult> PlaceOrder(int customerId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var result = await _ordersService.PlaceOrder(customerId);
+            if(result.IsSuccess)
             {
                 return Ok(result);
             }

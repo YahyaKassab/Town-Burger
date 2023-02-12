@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230212183401_removing-unnecessary-relations")]
+    partial class removingunnecessaryrelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -228,10 +231,6 @@ namespace TownBurger.Migrations
                     b.HasIndex("CustomerId")
                         .IsUnique()
                         .HasFilter("[CustomerId] IS NOT NULL");
-
-                    b.HasIndex("OrderId")
-                        .IsUnique()
-                        .HasFilter("[OrderId] IS NOT NULL");
 
                     b.ToTable("Carts");
                 });
@@ -460,6 +459,12 @@ namespace TownBurger.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CartId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CartId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -473,6 +478,8 @@ namespace TownBurger.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CartId1");
 
                     b.HasIndex("CustomerId");
 
@@ -598,10 +605,6 @@ namespace TownBurger.Migrations
                     b.HasOne("Town_Burger.Models.Identity.Customer", null)
                         .WithOne("Cart")
                         .HasForeignKey("Town_Burger.Models.Cart", "CustomerId");
-
-                    b.HasOne("Town_Burger.Models.Order", null)
-                        .WithOne("Cart")
-                        .HasForeignKey("Town_Burger.Models.Cart", "OrderId");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.CartItem", b =>
@@ -656,11 +659,19 @@ namespace TownBurger.Migrations
 
             modelBuilder.Entity("Town_Burger.Models.Order", b =>
                 {
+                    b.HasOne("Town_Burger.Models.Cart", "Cart")
+                        .WithMany()
+                        .HasForeignKey("CartId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Town_Burger.Models.Identity.Customer", null)
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Cart");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Review", b =>
@@ -714,12 +725,6 @@ namespace TownBurger.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("Town_Burger.Models.Order", b =>
-                {
-                    b.Navigation("Cart")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

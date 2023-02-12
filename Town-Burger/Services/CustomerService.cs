@@ -53,6 +53,9 @@ namespace Town_Burger.Services
                 {
                     FullName = form.FullName,
                     Cart = new Cart()
+                    {
+                        Items = null
+                    }
                     };
               
          
@@ -131,7 +134,7 @@ namespace Town_Burger.Services
         public async Task<GenericResponse<string>> DeleteCustomerAsync(int customerId)
         {
 
-            var customer = await _context.Customers.FirstOrDefaultAsync(e => e.Id == customerId);
+            var customer = await _context.Customers.Include(e=>e.Cart).FirstOrDefaultAsync(e => e.Id == customerId);
 
 
             if (customer == null)
@@ -141,7 +144,8 @@ namespace Town_Burger.Services
                     Message = "Customer Not found"
                 };
 
-
+            var result =  _context.Remove(customer.Cart);
+            _context.SaveChanges();
             var user = await _userManager.FindByIdAsync(customer.UserId);
 
             try
@@ -173,7 +177,6 @@ namespace Town_Burger.Services
                 var _address = new Address
                 {
                     CustomerId = address.CustomerId,
-                    Customer = customer,
                     Street = address.Street,
                     Details = address.Details,
                 };

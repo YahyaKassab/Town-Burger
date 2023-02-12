@@ -1,6 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.Xml;
 using Town_Burger.Models;
 using Town_Burger.Models.Context;
+using Town_Burger.Models.Dto;
 using Town_Burger.Models.Responses;
 
 namespace Town_Burger.Services
@@ -9,16 +12,21 @@ namespace Town_Burger.Services
     {
         Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart);
         Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId);
-        Task<GenericResponse<Order>> PlaceOrder(Order order); 
+        Task<GenericResponse<Order>> PlaceOrder(int customerId);
+
+        Task<GenericResponse<int>> UpdateState(int orderId, int state);
+        Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered();
     }
 
     public class OrdersService : IOrdersService
     {
         private readonly AppDbContext _context;
+        private readonly ICustomerService _customerService;
 
-        public OrdersService(AppDbContext context)
+        public OrdersService(AppDbContext context, ICustomerService customerService)
         {
             _context = context;
+            _customerService = customerService;
         }
 
         public async Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart)
@@ -59,9 +67,56 @@ namespace Town_Burger.Services
             }
             
         }
-        public async Task<GenericResponse<Order>> PlaceOrder(Order order)
+        public async Task<GenericResponse<Order>> PlaceOrder(int customerId)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var customer = await _customerService.GetCustomerByIdAsync(customerId);
+                if (!customer.IsSuccess)
+                    return new GenericResponse<Order>
+                    {
+                        IsSuccess = false,
+                        Message = "Customer doesnt exist"
+                    };
+                var cart = await GetCartByCustomerId(customerId);
+                if (!cart.IsSuccess)
+                    return new GenericResponse<Order>
+                    {
+                        IsSuccess = false,
+                        Message = "Cart doesnt exist"
+                    };
+
+                var _order = new Order()
+                {
+                    Cart = cart.Result,
+                    CustomerId = customerId,
+                    PlacedIn = DateTime.Now,
+                    State = 0
+                };
+                var result = await _context.Orders.AddAsync(_order);
+                await _context.SaveChangesAsync();
+                cart.Result.CustomerId = null;
+                cart.Result.OrderId = _order.Id;
+                cart.Result.Order = _order;
+                await _context.Carts.AddAsync(new Cart()
+                {
+                    CustomerId = customerId,
+                });
+                await _context.SaveChangesAsync();
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = true,
+                    Message = "Order Added Successfully",
+                    Result = _order
+                };
+            }catch (Exception ex)
+            {
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
         }
 
         public async Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId)
@@ -78,6 +133,106 @@ namespace Town_Burger.Services
                 IsSuccess = true,
                 Message = "Cart Got Successfully",
                 Result = cart
+            };
+
+        }
+
+        public async Task<GenericResponse<int>> UpdateState(int orderId,int state)
+        {
+            try
+            {
+                var order = await _context.Orders.FindAsync(orderId);
+                if (order == null)
+                    return new GenericResponse<int>
+                    {
+                        IsSuccess = false,
+                        Message = "Order Not Found"
+                    };
+                //Order Exists
+                order.State = state;
+                await _context.SaveChangesAsync();
+
+                return new GenericResponse<int>
+                {
+                    IsSuccess = true,
+                    Message = "State Updated Successfully",
+                    Result = order.State
+                };
+
+            }catch (Exception ex)
+            {
+                return new GenericResponse<int>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
+
+        }
+
+        public async Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered()
+        {
+            var carts = await _context.Carts.Include(e => e.Order).Include(e=>e.Items).ThenInclude(e=>e.Item).Where(e => e.Order != null && e.Order.PlacedIn > DateTime.Now.AddMonths(-1)).ToListAsync();
+            if (carts.Count == 0)
+                return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
+                {
+                    IsSuccess = false,
+                    Message = "Failed Or there was no orders in the last month"
+                };
+
+            //fetch success
+
+            var ItemsCounter = new List<MostOrderedCounter>();
+
+            foreach(var cart in carts)
+            {
+                foreach(var cartItem in cart.Items)
+                {
+                        //menu item exists
+                    if(ItemsCounter.Exists(item=>item.item.Id == cartItem.Item.Id))
+                    {
+                        //got my item in the list
+                        var ItemInList = ItemsCounter.Find(item => item.item.Id == cartItem.Item.Id);
+                        //increase the counter
+                        ItemInList.counter += cartItem.Quantity;
+                    }
+                    //menu item doesnt exist
+
+                    //add the item
+                    ItemsCounter.Add(new MostOrderedCounter()
+                    {
+                        counter = cartItem.Quantity,
+                        item = cartItem.Item
+                    });
+                }
+            }
+            var ItemsOrdered = ItemsCounter.OrderByDescending(item => item.counter).ToList();
+            if(ItemsOrdered.Count < 3)
+            {
+                var menuItems = new List<(MenuItem item, int count)>();
+                foreach(var item in ItemsOrdered)
+                {
+                    menuItems.Add((item.item,item.counter));
+                }
+                return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
+                {
+                    IsSuccess = true,
+                    Message = $"Top {ItemsOrdered.Count} Most ordered",
+                    Result = menuItems
+                };
+            }
+
+            //more than 3
+            return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
+            {
+                IsSuccess = true,
+                Message = "Top 3 Most ordered",
+                Result = new (MenuItem item, int count)[]
+                    {
+                        (ItemsOrdered[0].item,ItemsOrdered[0].counter),
+                        (ItemsOrdered[1].item, ItemsOrdered[1].counter),
+                        (ItemsOrdered[2].item, ItemsOrdered[2].counter),
+                    }
             };
 
         }

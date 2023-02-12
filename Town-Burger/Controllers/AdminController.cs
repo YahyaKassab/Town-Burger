@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Town_Burger.Models;
 using Town_Burger.Models.Context;
 using Town_Burger.Models.Dto;
 using Town_Burger.Models.Identity;
@@ -18,15 +19,40 @@ namespace Town_Burger.Controllers
         private readonly UserManager<User> _userManager;
         private readonly IEmployeeService _employeeService;
         private readonly AppDbContext _context;
+        private readonly IOrdersService _orderService;
+        private readonly IMenuService _menuService;
 
-        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context)
+
+        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService)
         {
             _balanceService = balanceService;
             _userService = userService;
             _userManager = userManager;
             _employeeService = employeeService;
             _context = context;
+            _orderService = orderService;
+            _menuService = menuService;
         }
+
+        #region Menu
+        [HttpPost("UpdateItem")]
+        public IActionResult UpdateItem(MenuItem item)
+        {
+            var result = _menuService.UpdateMenuItem(item);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpDelete("DeleteItem")]
+        public async Task<IActionResult> DeleteItem(int itemId)
+        {
+            var result = await _menuService.DeleteMenuItem(itemId);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        #endregion
 
 
         #region Balance
@@ -261,6 +287,18 @@ namespace Town_Burger.Controllers
             {
                 return Ok(result);
             }
+            return BadRequest(result);
+        }
+
+        #endregion
+
+        #region Orders 
+        [HttpGet("GetMostOrdered")]
+        public async Task<IActionResult> GetMostOrdered()
+        {
+            var result = await _orderService.GetMostOrdered();
+            if(result.IsSuccess)
+                return Ok(result);
             return BadRequest(result);
         }
 

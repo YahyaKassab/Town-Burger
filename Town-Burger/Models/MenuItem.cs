@@ -14,7 +14,7 @@ namespace Town_Burger.Models
         public string? ImageSource{ get; set; }
         [Required]
         public double Price { get; set; }
-        public ICollection<CartItem>? CarItems { get; set; }
+//        public ICollection<CartItem>? CartItems { get; set; }
 
 
     }

@@ -15,6 +15,5 @@ namespace Town_Burger.Models
         public int Quantity { get; set; }
         [Required]
         public int CartId { get; set; }
-        public Cart Cart { get; set; }
     }
 }
