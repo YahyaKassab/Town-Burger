@@ -9,8 +9,8 @@ namespace Town_Burger.Services
 {
     public interface IBalanceService
     {
-        //Task<GenericResponse<double>> AddDepositAsync(string fromId,double amount,DateTime? time = null);
-        //Task<GenericResponse<double>> AddSpendAsync(string fromId, double amount, DateTime? time = null);
+        Task<GenericResponse<double>> AddDepositAsync(int fromId, double amount);
+        Task<GenericResponse<double>> AddSpendAsync(int fromId, double amount);
         Task<GenericResponse<double>> AddToBalanceAsync(double amount);
         Task<GenericResponse<double>> SubFromBalanceAsync(double amount);
         Task<GenericResponse<Balance>> GetBalance();
@@ -28,128 +28,87 @@ namespace Town_Burger.Services
     {
         private readonly AppDbContext _context;
         private UserManager<User> _userManager;
+        private readonly ICustomerService _cutomerService;
+        private readonly IEmployeeService _employeeService;
 
-        public BalanceService(AppDbContext context, UserManager<User> userManager)
+        public BalanceService(AppDbContext context, UserManager<User> userManager, ICustomerService cutomerService, IEmployeeService employeeService)
         {
             _context = context;
             _userManager = userManager;
+            _cutomerService = cutomerService;
+            _employeeService = employeeService;
         }
 
-        //public async Task<GenericResponse<double>> AddDepositAsync(string fromId, double amount, DateTime? time = null)
-        //{
-        //    var user = await _userManager.FindByIdAsync(fromId);
-        //    var balance = await GetBalance();
-        //    var _balance = balance.Result;
+        public async Task<GenericResponse<double>> AddDepositAsync(int fromId, double amount)
+        {
+            var customer = await _cutomerService.GetCustomerByIdAsync(fromId);
+            var balance = await GetBalance();
+            var _balance = balance.Result;
 
-        //    //user Doesnt exist
-        //    if (user == null) return new GenericResponse<double>
-        //    {
-        //        IsSuccess = false,
-        //        Message = "No user With this Id"
-        //    };
+            //customer Doesnt exist
+            if (!customer.IsSuccess) return new GenericResponse<double>
+            {
+                IsSuccess = false,
+                Message = "No customer With this Id"
+            };
+            //customer exists and is customer
+            var deposit = new Deposit()
+            {
+                CustomerId = fromId,
+                Amount = amount,
+                Time = DateTime.Now,
+            };
 
-        //    var isCustomer =  await _userManager.IsInRoleAsync(user,"Customer");
-
-        //    //user isnt customer
-        //    if (!isCustomer)
-        //        return new GenericResponse<double>
-        //        {
-        //            IsSuccess = false,
-        //            Message = "Only A user can deposit"
-        //        };
-
-        //    //user exists and is customer
-        //    Deposit deposit;
-        //    if(time.HasValue)
-        //    {
-        //         deposit = new Deposit()
-        //        {
-        //            User = user,
-        //            Amount = amount,
-        //            Time = time.Value,
-        //        };
-        //    }
-        //    else
-        //    {
-        //        deposit = new Deposit()
-        //        {
-        //            User = user,
-        //            Amount = amount,
-        //        };
-        //    }
-        //    var result = await _context.Deposits.AddAsync(deposit);
-        //    _balance.TotalDeposits += amount;
-        //    _balance.TotalEarnings += amount;
-        //    _context.Balances.Update(_balance);
-        //    await _context.SaveChangesAsync();
-        //    await AddToBalanceAsync(amount);
-        //    return new GenericResponse<double>
-        //    {
-        //        IsSuccess = true,
-        //        Message = "Deposit Added Successfully",
-        //        Result = amount
-        //    };
+            var result = await _context.Deposits.AddAsync(deposit);
+            _balance.TotalDeposits += amount;
+            _balance.TotalEarnings += amount;
+            _context.Balances.Update(_balance);
+            await _context.SaveChangesAsync();
+            await AddToBalanceAsync(amount);
+            return new GenericResponse<double>
+            {
+                IsSuccess = true,
+                Message = "Deposit Added Successfully",
+                Result = amount
+            };
 
 
-        //}
-        //public async Task<GenericResponse<double>> AddSpendAsync(string fromId, double amount, DateTime? time = null)
-        //{
+        }
+        public async Task<GenericResponse<double>> AddSpendAsync(int fromId, double amount)
+        {
 
-        //    var user = await _userManager.FindByIdAsync(fromId);
-        //    var balance = await GetBalance();
-        //    var _balance = balance.Result;
+            var employee = await _employeeService.GetEmployeeByIdAsync(fromId);
+            var balance = await GetBalance();
+            var _balance = balance.Result;
 
-        //    //user Doesnt exist
-        //    if (user == null) return new GenericResponse<double>
-        //    {
-        //        IsSuccess = false,
-        //        Message = "No user With this Id"
-        //    };
+            //customer Doesnt exist
+            if (!employee.IsSuccess) return new GenericResponse<double>
+            {
+                IsSuccess = false,
+                Message = "No employee With this Id"
+            };
+            //customer exists and is employee
+                var spend = new Spend()
+                {
+                    EmployeeId= fromId,
+                    Amount = amount,
+                    Time = DateTime.Now
+                };
 
-        //    var isEmployee = await _userManager.IsInRoleAsync(user, "Employee");
-
-        //    //user isnt employee
-        //    if (!isEmployee)
-        //        return new GenericResponse<double>
-        //        {
-        //            IsSuccess = false,
-        //            Message = "Only An Employee can Spend"
-        //        };
-
-        //    //user exists and is employee
-        //    Spend spend;
-        //    if (time.HasValue)
-        //    {
-        //         spend = new Spend()
-        //        {
-        //            User = user,
-        //            Amount = amount,
-        //            Time= time.Value,
-        //        };
-        //    }
-        //    else
-        //    {
-        //         spend = new Spend()
-        //        {
-        //            User = user,
-        //            Amount = amount,
-        //        };
-        //    }
-        //    var result = await _context.AddAsync(spend);
-        //    _balance.TotalSpends += amount;
-        //    _balance.TotalEarnings -= amount;
-        //    _context.Balances.Update(_balance);
-        //    await _context.SaveChangesAsync();
-        //    await SubFromBalanceAsync(amount);
-        //    return new GenericResponse<double>
-        //    {
-        //        IsSuccess = true,
-        //        Message = "Spend Added Successfully",
-        //        Result = amount
-        //    };
+            var result = await _context.AddAsync(spend);
+            _balance.TotalSpends += amount;
+            _balance.TotalEarnings -= amount;
+            await _context.SaveChangesAsync();
+            await SubFromBalanceAsync(amount);
+            return new GenericResponse<double>
+            {
+                IsSuccess = true,
+                Message = "Spend Added Successfully",
+                Result = amount
+            };
 
 
-        //}
+        }
 
         public async Task<GenericResponse<Balance>> GetBalance()
         {

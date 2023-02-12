@@ -7,7 +7,7 @@ namespace Town_Burger.Models
         public int Id { get; set; }
         public int MenuItemId { get; set; }
         [Required]
-        public MenuItem Item { get; set; }
+        public MenuItem? Item { get; set; }
 
         public string Description { get; set; }
 

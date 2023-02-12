@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230212204807_review-update")]
+    partial class reviewupdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -628,11 +631,13 @@ namespace TownBurger.Migrations
 
             modelBuilder.Entity("Town_Burger.Models.Deposit", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.Customer", null)
+                    b.HasOne("Town_Burger.Models.Identity.Customer", "Customer")
                         .WithMany("DepositsCustomer")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Identity.Customer", b =>
@@ -677,11 +682,13 @@ namespace TownBurger.Migrations
 
             modelBuilder.Entity("Town_Burger.Models.Spend", b =>
                 {
-                    b.HasOne("Town_Burger.Models.Identity.Employee", null)
+                    b.HasOne("Town_Burger.Models.Identity.Employee", "Employee")
                         .WithMany("SpendsEmployee")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>

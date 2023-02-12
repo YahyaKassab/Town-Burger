@@ -22,11 +22,13 @@ namespace Town_Burger.Services
     {
         private readonly AppDbContext _context;
         private readonly ICustomerService _customerService;
+        private readonly IBalanceService _balanceService;
 
-        public OrdersService(AppDbContext context, ICustomerService customerService)
+        public OrdersService(AppDbContext context, ICustomerService customerService, IBalanceService balanceService)
         {
             _context = context;
             _customerService = customerService;
+            _balanceService = balanceService;
         }
 
         public async Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart)
@@ -103,6 +105,13 @@ namespace Town_Burger.Services
                     CustomerId = customerId,
                 });
                 await _context.SaveChangesAsync();
+                var _result = await _balanceService.AddDepositAsync(customerId, cart.Result.TotalPrice);
+                if (!_result.IsSuccess)
+                    return new GenericResponse<Order>
+                    {
+                        IsSuccess = false,
+                        Message = _result.Message
+                    };
                 return new GenericResponse<Order>
                 {
                     IsSuccess = true,

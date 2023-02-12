@@ -21,9 +21,10 @@ namespace Town_Burger.Controllers
         private readonly AppDbContext _context;
         private readonly IOrdersService _orderService;
         private readonly IMenuService _menuService;
+        private readonly IReviewService _reviewService;
 
 
-        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService)
+        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService)
         {
             _balanceService = balanceService;
             _userService = userService;
@@ -32,6 +33,7 @@ namespace Town_Burger.Controllers
             _context = context;
             _orderService = orderService;
             _menuService = menuService;
+            _reviewService = reviewService;
         }
 
         #region Menu
@@ -54,6 +56,26 @@ namespace Town_Burger.Controllers
 
         #endregion
 
+        #region Reviews
+
+        [HttpGet("GetAllReviews")]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _reviewService.GetAll();
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpGet("GetLatestReviews")]
+        public async Task<IActionResult> GetLatest()
+        {
+            var result = await _reviewService.GetLatest();
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        #endregion
 
         #region Balance
         //[Authorize(Roles = "Admin")]
@@ -93,28 +115,28 @@ namespace Town_Burger.Controllers
         }
 
 
-        //[HttpPost("AddDeposit")]
-        //public async Task<IActionResult> AddDeposit(string fromId, double amount)
-        //{
-        //    var result = await _balanceService.AddDepositAsync(fromId, amount);
-        //    if (result.IsSuccess)
-        //    {
-        //        return Ok(result);
-        //    }
-        //    return BadRequest(result);
-        //}
+        [HttpPost("AddDeposit")]
+        public async Task<IActionResult> AddDeposit(int fromId, double amount)
+        {
+            var result = await _balanceService.AddDepositAsync(fromId, amount);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
 
-        //[HttpPost("AddSpend")]
-        //public async Task<IActionResult> AddSpend(string fromId, double amount)
-        //{
-        //    var result = await _balanceService.AddSpendAsync(fromId, amount);
-        //    if (result.IsSuccess)
-        //    {
-        //        return Ok(result);
-        //    }
-        //    return BadRequest(result);
-        //}
+        [HttpPost("AddSpend")]
+        public async Task<IActionResult> AddSpend(int fromId, double amount)
+        {
+            var result = await _balanceService.AddSpendAsync(fromId, amount);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
 
         //Day

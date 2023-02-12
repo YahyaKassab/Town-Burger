@@ -11,10 +11,12 @@ namespace Town_Burger.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;
+        private readonly IReviewService _reviewService;
 
-        public CustomerController(ICustomerService customerService)
+        public CustomerController(ICustomerService customerService, IReviewService reviewService)
         {
             _customerService = customerService;
+            _reviewService = reviewService;
         }
 
         [HttpPost("AddAddress")]
@@ -50,5 +52,18 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
+        [HttpPost("AddReview")]
+        public async Task<IActionResult> AddReview(ReviewDto model)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _reviewService.AddReviewAsync(model);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
     }
 }
