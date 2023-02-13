@@ -36,16 +36,16 @@ namespace Town_Burger.Models.Context
 
 
         }
-        public DbSet<Balance> Balances { get; set; }
-        public DbSet<Deposit> Deposits { get; set; }
-        public DbSet<Spend> Spends { get; set; }
-        public DbSet<Address> Addresses { get; set; }
-        public DbSet<Cart> Carts { get; set; }
-        public DbSet<MenuItem> MenuItems { get; set; }
-        public DbSet<Order> Orders{ get; set; }
-        public DbSet<Review> Reviews{ get; set; }
-        public DbSet<Customer> Customers{ get; set; }
-        public DbSet<Employee> Employees{ get; set; }
+        public virtual DbSet<Balance> Balances { get; set; }
+        public virtual DbSet<Deposit> Deposits { get; set; }
+        public virtual DbSet<Spend> Spends { get; set; }
+        public virtual DbSet<Address> Addresses { get; set; }
+        public virtual DbSet<Cart> Carts { get; set; }
+        public virtual DbSet<MenuItem> MenuItems { get; set; }
+        public virtual DbSet<Order> Orders{ get; set; }
+        public virtual DbSet<Review> Reviews{ get; set; }
+        public virtual DbSet<Customer> Customers{ get; set; }
+        public virtual DbSet<Employee> Employees{ get; set; }
 
         
     }
