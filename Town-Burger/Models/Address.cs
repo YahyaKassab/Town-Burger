@@ -9,7 +9,7 @@ namespace Town_Burger.Models
         public int Id { get; set; }
         public string Street { get; set; }
         public string Details { get; set; }
-
         public int CustomerId { get; set; }
+        public Customer? Customer { get; set; }
     }
 }

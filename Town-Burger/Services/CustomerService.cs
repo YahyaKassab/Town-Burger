@@ -58,7 +58,7 @@ namespace Town_Burger.Services
                     {
                         Items = null
                     }
-                    };
+                };
               
          
 
@@ -175,14 +175,14 @@ namespace Town_Burger.Services
         {
             try
             {
-                var customer = await _context.Customers.FindAsync(address.CustomerId);
+                var customer = await _context.Customers.Include(c=>c.Addresses).FirstOrDefaultAsync(c=>c.Id == address.CustomerId);
                 var _address = new Address
                 {
                     CustomerId = address.CustomerId,
                     Street = address.Street,
                     Details = address.Details,
                 };
-                var result = await _context.Addresses.AddAsync(_address);
+                customer.Addresses.Add(_address);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Address>()
                 {

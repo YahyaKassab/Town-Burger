@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+﻿using EllipticCurve.Utils;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography.Xml;
 using Town_Burger.Models;
@@ -12,11 +13,14 @@ namespace Town_Burger.Services
     {
 
 
-        //add from the parent table not from the child indepenedently 
-
         Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart);
         Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId);
         Task<GenericResponse<Order>> PlaceOrder(int customerId);
+        Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
+        Task<GenericResponse<Order>> EditOrder(Order order);
+        Task<GenericResponse<Order>> DeleteOrder(int orderId);
+
+        Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId);
 
         Task<GenericResponse<int>> UpdateState(int orderId, int state);
         Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered();
@@ -51,11 +55,12 @@ namespace Town_Burger.Services
                 {
                     foreach (var item in cart.Items)
                     {
+                        item.Item = await _context.MenuItems.FindAsync(item.MenuItemId);
+                        item.CartId = cart.Id;
                         total += item.Quantity * item.Item.Price;
                     }
                     cart.TotalPrice = total;
                 }
-                var result = _context.Carts.Update(cart);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Cart>
                 {
@@ -77,39 +82,32 @@ namespace Town_Burger.Services
         {
             try
             {
-                var customer = await _customerService.GetCustomerByIdAsync(customerId);
-                if (!customer.IsSuccess)
+                var customer = await _context.Customers.Include(c=>c.Orders).Include(c=>c.Cart).FirstOrDefaultAsync(c=>c.Id == customerId);
+                if (customer == null)
                     return new GenericResponse<Order>
                     {
                         IsSuccess = false,
                         Message = "Customer doesnt exist"
                     };
-                var cart = await GetCartByCustomerId(customerId);
-                if (!cart.IsSuccess)
-                    return new GenericResponse<Order>
-                    {
-                        IsSuccess = false,
-                        Message = "Cart doesnt exist"
-                    };
-
                 var _order = new Order()
                 {
-                    Cart = cart.Result,
+                    Cart = customer.Cart,
                     CustomerId = customerId,
                     PlacedIn = DateTime.Now,
                     State = 0
                 };
-                var result = await _context.Orders.AddAsync(_order);
+                customer.Orders.Add(_order);
                 await _context.SaveChangesAsync();
-                cart.Result.CustomerId = null;
-                cart.Result.OrderId = _order.Id;
-                cart.Result.Order = _order;
-                await _context.Carts.AddAsync(new Cart()
+                customer.Cart.CustomerId = null;
+                customer.Cart.Customer = null;
+                customer.Cart.OrderId = _order.Id;
+                customer.Cart.Order = _order;
+                customer.Cart = new Cart()
                 {
                     CustomerId = customerId,
-                });
+                };
                 await _context.SaveChangesAsync();
-                var _result = await _balanceService.AddDepositAsync(customerId, cart.Result.TotalPrice);
+                var _result = await _balanceService.AddDepositAsync(customerId, customer.Cart.TotalPrice);
                 if (!_result.IsSuccess)
                     return new GenericResponse<Order>
                     {
@@ -249,5 +247,105 @@ namespace Town_Burger.Services
             };
 
         }
+
+        public async Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId)
+        {
+            var order = await _context.Orders.Include(o => o.Customer).FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null)
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = true,
+                    Message = "No order with this id"
+                };
+            return new GenericResponse<Order>
+            {
+                IsSuccess = true,
+                Message = "Order Fetched Successfully",
+                Result = order
+            };
+        }
+
+        public async Task<GenericResponse<Order>> EditOrder(Order order)
+        {
+            try
+            {
+                if(order.PlacedIn > DateTime.Now.AddMinutes(-15))
+                {
+                    order.Customer = await _context.Customers.Include(c=>c.Cart).FirstOrDefaultAsync(c=>c.Id == order.CustomerId);
+//                    order.Cart = order.Customer.Cart;
+                    _context.Update(order);
+                    await _context.SaveChangesAsync();
+                    return new GenericResponse<Order> { IsSuccess = true, Message = "Edited Successfully", Result = order };
+                }
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = false,
+                    Message = "15 Mins passed you cant edit the order now"
+                };
+            }catch(Exception ex)
+            {
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
+        }
+
+        public async Task<GenericResponse<Order>> DeleteOrder(int orderId)
+        {
+            try
+            {
+                    var order = await _context.Orders.Include(o=>o.Cart).FirstOrDefaultAsync(o=>o.Id == orderId);
+                    if (order == null)
+                        return new GenericResponse<Order> { IsSuccess = false, Message = "Order not found" };
+                if (order.PlacedIn > DateTime.Now.AddMinutes(-25))
+                {
+                    var customer = await _context.Customers.Include(c=>c.Orders).FirstOrDefaultAsync(c=>c.Id == order.CustomerId);
+                    if (customer == null)
+                        return new GenericResponse<Order> { IsSuccess = false, Message = "customer doesnt exist" };
+                    _context.Remove(order);
+                    _context.Remove(order.Cart);
+                    await _context.SaveChangesAsync();
+                    return new GenericResponse<Order> { IsSuccess = true, Message = "removed Successfully", Result = order };
+                }
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = false,
+                    Message = "25 Mins passed you cant delete the order now"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse<Order>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
+        }
+
+        public async Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId)
+        {
+            try
+            {
+                var orders = await _context.Orders.Where(o => o.CustomerId == customerId).ToListAsync();
+                if (orders.Count == 0)
+                    return new GenericResponse<IEnumerable<Order>>
+                    {
+                        IsSuccess = true,
+                        Message = "You dont have any orderes yet"
+                    };
+                return new GenericResponse<IEnumerable<Order>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = orders };
+            }catch (Exception ex)
+            {
+                return new GenericResponse<IEnumerable<Order>>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
+        }
+
     }
 }

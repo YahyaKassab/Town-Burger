@@ -46,6 +46,7 @@ namespace Town_Burger.Models.Context
         public virtual DbSet<Review> Reviews{ get; set; }
         public virtual DbSet<Customer> Customers{ get; set; }
         public virtual DbSet<Employee> Employees{ get; set; }
+        public virtual DbSet<Secondary> Secondaries{ get; set; }
 
         
     }

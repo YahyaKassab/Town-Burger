@@ -6,14 +6,14 @@ namespace Town_Burger.Models
     {
         public int Id { get; set; }
         public int MenuItemId { get; set; }
-        [Required]
         public MenuItem? Item { get; set; }
 
         public string Description { get; set; }
 
         [Required]
         public int Quantity { get; set; }
-        [Required]
-        public int CartId { get; set; }
+        public int? CartId { get; set; }
+
+        public Cart? Cart { get; set; }
     }
 }

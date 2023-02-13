@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230213145951_insert-sec")]
+    partial class insertsec
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -178,7 +181,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Addresses", (string)null);
+                    b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Balance", b =>
@@ -203,7 +206,7 @@ namespace TownBurger.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Balances", (string)null);
+                    b.ToTable("Balances");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Cart", b =>
@@ -233,7 +236,7 @@ namespace TownBurger.Migrations
                         .IsUnique()
                         .HasFilter("[OrderId] IS NOT NULL");
 
-                    b.ToTable("Carts", (string)null);
+                    b.ToTable("Carts");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.CartItem", b =>
@@ -263,7 +266,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("MenuItemId");
 
-                    b.ToTable("CartItem", (string)null);
+                    b.ToTable("CartItem");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Deposit", b =>
@@ -287,7 +290,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Deposits", (string)null);
+                    b.ToTable("Deposits");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Identity.Customer", b =>
@@ -312,7 +315,7 @@ namespace TownBurger.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Customers", (string)null);
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Identity.Employee", b =>
@@ -352,7 +355,7 @@ namespace TownBurger.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Identity.User", b =>
@@ -449,7 +452,7 @@ namespace TownBurger.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MenuItems", (string)null);
+                    b.ToTable("MenuItems");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Order", b =>
@@ -476,7 +479,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Orders", (string)null);
+                    b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Review", b =>
@@ -509,7 +512,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Secondary", b =>
@@ -530,7 +533,7 @@ namespace TownBurger.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Secondaries", (string)null);
+                    b.ToTable("Secondaries");
                 });
 
             modelBuilder.Entity("Town_Burger.Models.Spend", b =>
@@ -554,7 +557,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Spends", (string)null);
+                    b.ToTable("Spends");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

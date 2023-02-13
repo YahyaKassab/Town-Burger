@@ -47,49 +47,17 @@ namespace Town_Burger.Services
             //passwords match
 
             //my employee
-            Employee employee;
-            if (form.PictureSource == null)
+            Employee employee = new Employee()
             {
-                if (form.DaysOfWork == null)
-                    employee = new Employee()
-                    {
-                        FullName = form.FullName,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                    };
-                else
-                    employee = new Employee()
-                    {
-                        FullName = form.FullName,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                        DaysOfWork = form.DaysOfWork,
-                    };
-            }
-            else
-            {
-                if (form.DaysOfWork == null)
-                    employee = new Employee()
-                    {
-                        FullName = form.FullName,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                        PictureSource = form.PictureSource,
-                    };
-                else
-                    employee = new Employee()
-                    {
-                        FullName = form.FullName,
-                        Salary = form.Salary,
-                        ContractBegins = form.ContractBegins,
-                        ContractEnds = form.ContractEnds,
-                        DaysOfWork = form.DaysOfWork,
-                        PictureSource = form.PictureSource,
-                    };
-            }
+                FullName = form.FullName,
+                Salary = form.Salary,
+                ContractBegins = form.ContractBegins,
+                ContractEnds = form.ContractEnds,
+            };
+            if (form.DaysOfWork != null)
+                employee.DaysOfWork = form.DaysOfWork;
+            if(form.PictureSource != null)
+                employee.PictureSource = form.PictureSource;
 
             //create the user along with the employee
             User user = new User()

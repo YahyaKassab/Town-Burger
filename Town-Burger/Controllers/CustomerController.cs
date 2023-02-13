@@ -12,11 +12,13 @@ namespace Town_Burger.Controllers
     {
         private readonly ICustomerService _customerService;
         private readonly IReviewService _reviewService;
+        private readonly IOrdersService _ordersServics;
 
-        public CustomerController(ICustomerService customerService, IReviewService reviewService)
+        public CustomerController(ICustomerService customerService, IReviewService reviewService, IOrdersService ordersServics)
         {
             _customerService = customerService;
             _reviewService = reviewService;
+            _ordersServics = ordersServics;
         }
 
         [HttpPost("AddAddress")]
@@ -52,6 +54,41 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
+        [HttpGet("GetOrders")]
+        public async Task<IActionResult> GetOrders(int id)
+        {
+            var result = await _ordersServics.GetOrdersByCustomerId(id);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("GetOrderById")]
+        public async Task<IActionResult> GetOrderById(int id)
+        {
+           var result = await _ordersServics.GetOrderByIdAsync(id);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpPut("EditOrder")]
+        public async Task<IActionResult> EditOrder(Order order)
+        {
+            var result = await _ordersServics.EditOrder(order);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpDelete("DeleteOrder")]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var result = await _ordersServics.DeleteOrder(id);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
         [HttpPost("AddReview")]
         public async Task<IActionResult> AddReview(ReviewDto model)
         {

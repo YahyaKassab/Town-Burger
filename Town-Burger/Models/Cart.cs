@@ -13,6 +13,7 @@ namespace Town_Burger.Models
 
         public Order? Order { get; set; }
         public int? CustomerId { get; set; }
+        public Customer? Customer { get; set; }
 
 
     }

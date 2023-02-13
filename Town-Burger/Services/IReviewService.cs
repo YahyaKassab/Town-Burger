@@ -30,8 +30,8 @@ namespace Town_Burger.Services
         {
             try
             {
-                var customer = await _customerService.GetCustomerByIdAsync(review.CustomerId);
-                if (!customer.IsSuccess)
+                var customer = await _context.Customers.Include(c=>c.Reviews).SingleOrDefaultAsync(c=>c.Id == review.CustomerId);
+                if (customer == null)
                     return new GenericResponse<Review>
                     {
                         IsSuccess = false,
@@ -45,7 +45,7 @@ namespace Town_Burger.Services
                     CustomerId = review.CustomerId,
                     Time = DateTime.Now,
                 };
-                var result = await _context.Reviews.AddAsync(_review);
+                customer.Reviews.Add(_review);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Review>
                 {
@@ -68,7 +68,7 @@ namespace Town_Burger.Services
         {
             try
             {
-                var reviews = await _context.Reviews.ToListAsync();
+                var reviews = await _context.Reviews.Include(r=>r.Customer).ToListAsync();
                 if (reviews.Count == 0)
                     return new GenericResponse<IEnumerable<Review>>()
                     {

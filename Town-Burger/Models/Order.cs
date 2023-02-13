@@ -8,8 +8,7 @@ namespace Town_Burger.Models
     {
 
         public int Id { get; set; }
-        [Required]
-        public Cart Cart { get; set; }
+        public Cart? Cart { get; set; }
         [Required]
         public DateTime PlacedIn { get; set; }
 
@@ -18,6 +17,7 @@ namespace Town_Burger.Models
         public int State { get; set; } = 0;
 
         public int CustomerId { get; set; }
+        public Customer? Customer { get; set; }
     }
 
   

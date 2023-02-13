@@ -22,9 +22,10 @@ namespace Town_Burger.Controllers
         private readonly IOrdersService _orderService;
         private readonly IMenuService _menuService;
         private readonly IReviewService _reviewService;
+        private readonly ISecondarySevice _secondaryService;
 
 
-        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService)
+        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService, ISecondarySevice secondaryService)
         {
             _balanceService = balanceService;
             _userService = userService;
@@ -34,6 +35,7 @@ namespace Town_Burger.Controllers
             _orderService = orderService;
             _menuService = menuService;
             _reviewService = reviewService;
+            _secondaryService = secondaryService;
         }
 
         #region Menu
@@ -126,6 +128,23 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
 
+        [HttpDelete("DeleteDeposit")]
+        public async Task<IActionResult> DeleteDeposit(int id)
+        {
+            var result = await _balanceService.DeleteDeposit(id);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpDelete("DeleteSpend")]
+        public async Task<IActionResult> DeleteSpendt(int id)
+        {
+            var result = await _balanceService.DeleteSpend(id);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
 
         [HttpPost("AddSpend")]
         public async Task<IActionResult> AddSpend(int fromId, double amount)
@@ -135,6 +154,22 @@ namespace Town_Burger.Controllers
             {
                 return Ok(result);
             }
+            return BadRequest(result);
+        }
+        [HttpGet("GetSpendById")]
+        public async Task<IActionResult> GetSpendById(int id)
+        {
+            var result = await _balanceService.GetSpendById(id);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpGet("GetDepositById")]
+        public async Task<IActionResult> GetDepositById(int id)
+        {
+            var result = await _balanceService.GetDepositById(id);
+            if(result.IsSuccess)
+                return Ok(result);
             return BadRequest(result);
         }
 
@@ -231,6 +266,41 @@ namespace Town_Burger.Controllers
             return Ok(result.Result);
         }
         #endregion
+
+        //Total
+        #region Total
+        [HttpGet("GetSpendsTotal")]
+        public async Task<IActionResult> GetSpendsTotal()
+        {
+            var result = await _balanceService.GetSpendsTotal();
+            if (result.IsSuccess)
+                return Ok(result.Result);
+            return BadRequest(result);
+
+
+        }
+        [HttpGet("GetDepositsTotal")]
+        public async Task<IActionResult> GetDepositsTotal()
+        {
+            var result = await _balanceService.GetDepositsTotal();
+            if (result.IsSuccess)
+                return Ok(result.Result);
+            return BadRequest(result);
+
+
+        }
+        [HttpGet("GetEarningsTotal")]
+        public async Task<IActionResult> GetEarningsTotal()
+        {
+            var result = await _balanceService.GetEarningsTotal();
+            if (result.IsSuccess)
+                return Ok(result.Result);
+            return BadRequest(result);
+
+
+        }
+
+        #endregion
         #endregion
 
         #region Employees
@@ -319,6 +389,53 @@ namespace Town_Burger.Controllers
         public async Task<IActionResult> GetMostOrdered()
         {
             var result = await _orderService.GetMostOrdered();
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("GetOrderById")]
+        public async Task<IActionResult> GetOrderById(int orderId)
+        {
+            var result = await _orderService.GetOrderByIdAsync(orderId);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        #endregion
+
+        #region Secondary
+
+        [HttpPut("EditAboutUs")]
+        public async Task<IActionResult> EditAboutUs(string aboutUs)
+        {
+            var result = await _secondaryService.EditAboutUs(aboutUs);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpPut("EditPolices")]
+        public async Task<IActionResult> EditPolices(string policies)
+        {
+            var result = await _secondaryService.EditOrderingPolicies(policies);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("GetAboutUs")]
+        public async Task<IActionResult> GetAboutUs()
+        {
+            var result = await _secondaryService.GetAboutUs();
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpGet("GetPolices")]
+        public async Task<IActionResult> GetPolices()
+        {
+            var result = await _secondaryService.GetOrderingPolicies();
             if(result.IsSuccess)
                 return Ok(result);
             return BadRequest(result);

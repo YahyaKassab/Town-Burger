@@ -19,6 +19,8 @@ namespace Town_Burger.Models
     {
         public int Id { get; set; }
         public int EmployeeId { get; set; }
+        public Employee? Employee { get; set; }
+
         [Required]
         public double Amount { get; set; }
         public DateTime Time { get; set; }
@@ -29,6 +31,7 @@ namespace Town_Burger.Models
     {
         public int Id { get; set; }
         public int CustomerId { get; set; }
+        public Customer? Customer { get; set; }
         [Required]
         public double Amount { get; set; }
         public DateTime Time { get; set; }

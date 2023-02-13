@@ -16,5 +16,6 @@ namespace Town_Burger.Models
         public DateTime Time { get; set; }
 
         public int CustomerId { get; set; }
+        public Customer? Customer { get; set; }
     }
 }
