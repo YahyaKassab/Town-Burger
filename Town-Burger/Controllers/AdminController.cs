@@ -18,6 +18,7 @@ namespace Town_Burger.Controllers
         private readonly IUserService _userService;
         private readonly UserManager<User> _userManager;
         private readonly IEmployeeService _employeeService;
+        private readonly ICustomerService _customerService;
         private readonly AppDbContext _context;
         private readonly IOrdersService _orderService;
         private readonly IMenuService _menuService;
@@ -25,7 +26,7 @@ namespace Town_Burger.Controllers
         private readonly ISecondarySevice _secondaryService;
 
 
-        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService, ISecondarySevice secondaryService)
+        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService, ISecondarySevice secondaryService, ICustomerService customerService)
         {
             _balanceService = balanceService;
             _userService = userService;
@@ -36,10 +37,11 @@ namespace Town_Burger.Controllers
             _menuService = menuService;
             _reviewService = reviewService;
             _secondaryService = secondaryService;
+            _customerService = customerService;
         }
-
+        //ok
         #region Menu
-        [HttpPost("UpdateItem")]
+        [HttpPut("UpdateItem")]
         public IActionResult UpdateItem(MenuItem item)
         {
             var result = _menuService.UpdateMenuItem(item);
@@ -58,6 +60,7 @@ namespace Town_Burger.Controllers
 
         #endregion
 
+        //ok
         #region Reviews
 
         [HttpGet("GetAllReviews")]
@@ -79,6 +82,7 @@ namespace Town_Burger.Controllers
 
         #endregion
 
+        //ok
         #region Balance
         //[Authorize(Roles = "Admin")]
         [HttpGet("GetBalance")]
@@ -93,7 +97,7 @@ namespace Town_Burger.Controllers
         }
 
 
-        [HttpPost("AddToBalance")]
+        [HttpPut("AddToBalance")]
         public async Task<IActionResult> AddToBalance(double amount)
         {
             var result = await _balanceService.AddToBalanceAsync(amount);
@@ -105,7 +109,7 @@ namespace Town_Burger.Controllers
         }
 
 
-        [HttpPost("SubFromBalance")]
+        [HttpPut("SubFromBalance")]
         public async Task<IActionResult> SubFromBalance(double amount)
         {
             var result = await _balanceService.SubFromBalanceAsync(amount);
@@ -116,46 +120,6 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
 
-
-        [HttpPost("AddDeposit")]
-        public async Task<IActionResult> AddDeposit(int fromId, double amount)
-        {
-            var result = await _balanceService.AddDepositAsync(fromId, amount);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
-
-        [HttpDelete("DeleteDeposit")]
-        public async Task<IActionResult> DeleteDeposit(int id)
-        {
-            var result = await _balanceService.DeleteDeposit(id);
-            if (result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
-        [HttpDelete("DeleteSpend")]
-        public async Task<IActionResult> DeleteSpendt(int id)
-        {
-            var result = await _balanceService.DeleteSpend(id);
-            if (result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
-
-
-        [HttpPost("AddSpend")]
-        public async Task<IActionResult> AddSpend(int fromId, double amount)
-        {
-            var result = await _balanceService.AddSpendAsync(fromId, amount);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
         [HttpGet("GetSpendById")]
         public async Task<IActionResult> GetSpendById(int id)
         {
@@ -303,6 +267,7 @@ namespace Town_Burger.Controllers
         #endregion
         #endregion
 
+        //ok
         #region Employees
         [HttpPost("AddEmployee")]
         public async Task<IActionResult> RegisterEmployeeAsync(RegisterEmployeeDto form)
@@ -332,9 +297,16 @@ namespace Town_Burger.Controllers
                 return BadRequest(result);
             return Ok(result);
         }
+        [HttpGet("GetAllEmployees")]
+        public async Task<IActionResult> GetAllEmployees()
+        {
+            var result = await _employeeService.GetAllEmployees();
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
 
-
-        [HttpPost("UpdateEmployee")]
+        [HttpPut("UpdateEmployee")]
         public async Task<IActionResult> UpdateEmployee(Employee employee)
         {
             var result = await _employeeService.UpdateEmployeeAsync(employee);
@@ -384,6 +356,22 @@ namespace Town_Burger.Controllers
 
         #endregion
 
+        //ok
+        #region Customers
+        [HttpGet("GetAllCustomers")]
+        public async Task<IActionResult> GetAllCustomers()
+        {
+            var result = await _customerService.GetAllCustomers();
+            if(result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        #endregion
+
+        //ok
         #region Orders 
         [HttpGet("GetMostOrdered")]
         public async Task<IActionResult> GetMostOrdered()
@@ -405,6 +393,7 @@ namespace Town_Burger.Controllers
 
         #endregion
 
+        //ok
         #region Secondary
 
         [HttpPut("EditAboutUs")]

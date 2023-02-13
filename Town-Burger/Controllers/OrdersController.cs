@@ -27,7 +27,7 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
-        [HttpPost("UpdateCart")]
+        [HttpPut("UpdateCart")]
         public async Task<IActionResult> UpdateCart(Cart cart)
         {
             var result = await _ordersService.UpdateCartAsync(cart);

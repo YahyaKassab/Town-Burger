@@ -13,6 +13,7 @@ namespace Town_Burger.Services
         //add from the parent table not from the child indepenedently 
 
         Task<GenericResponse<Employee>> GetEmployeeByIdAsync(int id);
+        Task<GenericResponse<IEnumerable<Employee>>> GetAllEmployees();
         Task<GenericResponse<IEnumerable<IdentityError>>> RegisterEmployeeAsync(RegisterEmployeeDto form);
         Task<GenericResponse<Employee>> UpdateEmployeeAsync(Employee employee);
         Task<GenericResponse<string>> DeleteEmployeeAsync(int employeeId);
@@ -166,5 +167,17 @@ namespace Town_Burger.Services
             }
         }
 
+        public async Task<GenericResponse<IEnumerable<Employee>>> GetAllEmployees()
+        {
+            var employees = await _context.Employees.Include(e=>e.User).ToListAsync();
+            if(employees.Count == 0)
+                return new GenericResponse<IEnumerable<Employee>> { IsSuccess = false, Message = "NO employees found" };
+            return new GenericResponse<IEnumerable<Employee>>
+            {
+                IsSuccess = true,
+                Message = "All Employees Fetched",
+                Result = employees
+            };
+        }
     }
 }

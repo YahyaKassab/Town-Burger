@@ -15,8 +15,10 @@ namespace Town_Burger.Services
 
         Task<GenericResponse<Address>> AddAddressAsync(AddressDto address);
         GenericResponse<Address> UpdateAddress(Address address);
+        Task<GenericResponse<IEnumerable<Address>>> GetAddressesByCustomerId(int customerId);
         Task<GenericResponse<string>> DeleteAddressAsync(int addressId);
         Task<GenericResponse<Customer>> GetCustomerByIdAsync(int id);
+        Task<GenericResponse<IEnumerable<Customer>>> GetAllCustomers();
         Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form);
         Task<GenericResponse<Customer>> UpdateCustomerAsync(Customer customer);
         Task<GenericResponse<string>> DeleteCustomerAsync(int customerId);
@@ -253,6 +255,51 @@ namespace Town_Burger.Services
                     Result = ex.Message,
                 };
             }
+        }
+
+        public async Task<GenericResponse<IEnumerable<Customer>>> GetAllCustomers()
+        {
+            try
+            {
+                var customers = await _context.Customers.Include(c=>c.User).ToListAsync();
+                if (customers.Count == 0)
+                    return new GenericResponse<IEnumerable<Customer>>()
+                    {
+                        IsSuccess = false,
+                        Message = "No Customers Found",
+                    };
+                return new GenericResponse<IEnumerable<Customer>>
+                {
+                    IsSuccess = true,
+                    Message = "Customers fetched successfully",
+                    Result = customers
+                };
+            }catch (Exception ex)
+            {
+                return new GenericResponse<IEnumerable<Customer>>()
+                {
+                    IsSuccess = false,
+                    Message = "There was an error"
+                };
+            }
+        }
+
+        public async Task<GenericResponse<IEnumerable<Address>>> GetAddressesByCustomerId(int customerId)
+        {
+            var addresses = await _context.Addresses.Where(a=>a.CustomerId == customerId).ToListAsync();
+            if (addresses.Count == 0)
+                return new GenericResponse<IEnumerable<Address>>
+                {
+                    IsSuccess = false,
+                    Message = "You dont have any addresses"
+                };
+            return new GenericResponse<IEnumerable<Address>>
+            {
+                IsSuccess = true,
+                Message = "Addresses fetched successfully",
+                Result = addresses
+            };
+
         }
     }
 }

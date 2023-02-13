@@ -11,7 +11,10 @@ namespace Town_Burger.Services
 
         //add from the parent table not from the child indepenedently 
 
+        Task<GenericResponse<Review>> GetReviewById(int Id);
         Task<GenericResponse<Review>> AddReviewAsync(ReviewDto review);
+        Task<GenericResponse<Review>> UpdateReview(Review review);
+        Task<GenericResponse<Review>> DeleteReview(int reviewId);
         Task<GenericResponse<IEnumerable<Review>>> GetLatest();
         Task<GenericResponse<IEnumerable<Review>>> GetAll();
     }
@@ -64,6 +67,31 @@ namespace Town_Burger.Services
 
         }
 
+        public async Task<GenericResponse<Review>> DeleteReview(int reviewId)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(reviewId);
+                if (review == null)
+                    return new GenericResponse<Review>
+                    {
+                        IsSuccess = false,
+                        Message = "Review Not Found",
+                    };
+                _context.Remove(review);
+                await _context.SaveChangesAsync();
+                return new GenericResponse<Review> { IsSuccess = true, Message = "Review Deleted Successfully", Result = review };
+            }catch (Exception ex)
+            {
+                return new GenericResponse<Review>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message,
+                };
+            }
+
+        }
+
         public async Task<GenericResponse<IEnumerable<Review>>> GetAll()
         {
             try
@@ -108,6 +136,52 @@ namespace Town_Burger.Services
                 Message = Reviews.Message,
                 Result = latest
             };
+        }
+
+        public async Task<GenericResponse<Review>> GetReviewById(int Id)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(Id);
+                if (review == null)
+                    return new GenericResponse<Review> { IsSuccess = false, Message = "Review not found" };
+                return new GenericResponse<Review>
+                {
+                    IsSuccess = true,
+                    Message = "Review Fetched Successfully",
+                    Result = review
+                };
+
+            }catch (Exception ex)
+            {
+                return new GenericResponse<Review>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message
+                };
+            }
+        }
+
+        public async Task<GenericResponse<Review>> UpdateReview(Review review)
+        {
+            try
+            {
+                _context.Update(review);
+                await _context.SaveChangesAsync();
+                return new GenericResponse<Review>
+                {
+                    IsSuccess = true,
+                    Message = "Successfully Updated",
+                    Result = review
+                };
+            }catch (Exception ex)
+            {
+                return new GenericResponse<Review>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message
+                };
+            }
         }
     }
 }

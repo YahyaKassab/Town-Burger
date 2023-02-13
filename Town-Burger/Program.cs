@@ -28,6 +28,7 @@ builder.Services.AddTransient<ICustomerService, CustomerService>();
 builder.Services.AddTransient<IOrdersService, OrdersService>();
 builder.Services.AddTransient<IMenuService, MenuService>();
 builder.Services.AddTransient<IReviewService, ReviewService>();
+builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.AddTransient<ISecondarySevice, SecondaryService>();
 builder.Services.AddTransient<AppDbContext, AppDbContext>();
 builder.Services.AddDbContext<AppDbContext>();

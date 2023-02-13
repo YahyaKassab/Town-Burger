@@ -16,13 +16,15 @@ namespace Town_Burger.Controllers
         private readonly IUserService _userService;
         private readonly IEmployeeService _employeeService;
         private readonly ICustomerService _customerService;
+        private readonly IMailService _mailService;
         private readonly AppDbContext _context;
-        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService, AppDbContext context)
+        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService, AppDbContext context, IMailService mailService)
         {
             _userService = userService;
             _employeeService = employeeService;
             _customerService = customerService;
             _context = context;
+            _mailService = mailService;
         }
 
         [HttpPost("AddCustomer")]
@@ -55,7 +57,7 @@ namespace Town_Burger.Controllers
         }
 
 
-        [HttpPost("UpdateCustomer")]
+        [HttpPut("UpdateCustomer")]
         public async Task<IActionResult> UpdateCustomer(Customer customer)
         {
             var result = await _customerService.UpdateCustomerAsync(customer);
@@ -73,6 +75,20 @@ namespace Town_Burger.Controllers
         {
             var result = await _customerService.DeleteCustomerAsync(cusomerId);
             if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+
+        }
+
+        [HttpPost("SendEmail")]
+        public async Task<IActionResult> SendEmail(SendEmailDto model)
+        {
+            if(!ModelState.IsValid)
+                 return BadRequest(ModelState);
+            var result = await _mailService.SendViaMailKit(model);
+            if(result)
             {
                 return Ok(result);
             }

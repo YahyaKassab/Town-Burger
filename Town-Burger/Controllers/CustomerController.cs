@@ -20,6 +20,7 @@ namespace Town_Burger.Controllers
             _reviewService = reviewService;
             _ordersServics = ordersServics;
         }
+        #region Address
 
         [HttpPost("AddAddress")]
         public async Task<IActionResult> AddAddress(AddressDto address)
@@ -32,7 +33,7 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
-        [HttpPost("UpdateAddress")]
+        [HttpPut("UpdateAddress")]
         public async Task<IActionResult> UpdateAddress(Address address)
         {
             // not adding
@@ -54,6 +55,21 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
+
+        [HttpGet("GetAddressesByCustomerId")]
+        public async Task<IActionResult> GetAddresses(int id)
+        {
+            var result = await _customerService.GetAddressesByCustomerId(id);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        #endregion
+
+        #region Orders
         [HttpGet("GetOrders")]
         public async Task<IActionResult> GetOrders(int id)
         {
@@ -88,6 +104,17 @@ namespace Town_Burger.Controllers
                 return Ok(result);
             return BadRequest(result);
         }
+        #endregion
+
+        #region Reviews
+        [HttpGet("GetReviewById")]
+        public async Task<IActionResult> GetReviewById(int id)
+        {
+            var result = await _reviewService.GetReviewById(id);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
 
         [HttpPost("AddReview")]
         public async Task<IActionResult> AddReview(ReviewDto model)
@@ -102,5 +129,32 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
 
+        [HttpPut("EditReview")]
+        public async Task<IActionResult> EditReview(Review review)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _reviewService.UpdateReview(review);
+            if(result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+
+        }
+
+        [HttpDelete("DeleteReview")]
+        public async Task<IActionResult> DeleteReview(int id)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _reviewService.DeleteReview(id);
+            if(result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        #endregion
     }
 }
