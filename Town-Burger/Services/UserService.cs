@@ -16,8 +16,10 @@ namespace Town_Burger.Services
 {
     public interface IUserService
     {
-        
-        
+        //add from the parent table not from the child indepenedently 
+
+
+
         Task<GenericResponse<User>> AddToRole(string userId, string roleName);
         Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName);
         Task<GenericResponse<(string token, DateTime expire)>> LoginAsync(LoginDto form);

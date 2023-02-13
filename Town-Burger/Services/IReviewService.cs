@@ -8,6 +8,9 @@ namespace Town_Burger.Services
 {
     public interface IReviewService
     {
+
+        //add from the parent table not from the child indepenedently 
+
         Task<GenericResponse<Review>> AddReviewAsync(ReviewDto review);
         Task<GenericResponse<IEnumerable<Review>>> GetLatest();
         Task<GenericResponse<IEnumerable<Review>>> GetAll();

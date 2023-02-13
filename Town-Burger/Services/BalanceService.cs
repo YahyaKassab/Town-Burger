@@ -9,6 +9,9 @@ namespace Town_Burger.Services
 {
     public interface IBalanceService
     {
+
+        //add from the parent table not from the child indepenedently 
+
         Task<GenericResponse<double>> AddDepositAsync(int fromId, double amount);
         Task<GenericResponse<double>> AddSpendAsync(int fromId, double amount);
         Task<GenericResponse<double>> AddToBalanceAsync(double amount);

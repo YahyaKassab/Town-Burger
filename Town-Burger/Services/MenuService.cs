@@ -7,6 +7,9 @@ namespace Town_Burger.Services
 {
     public interface IMenuService
     {
+
+        //add from the parent table not from the child indepenedently 
+
         Task<GenericResponse<MenuItem>> GetMenuItemById(int id);
         Task<GenericResponse<IEnumerable<MenuItem>>> GetFullMenu();
         Task<GenericResponse<MenuItem>> AddMenuItemAsync(MenuItemDto model);

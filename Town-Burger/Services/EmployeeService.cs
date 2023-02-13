@@ -9,6 +9,9 @@ namespace Town_Burger.Services
 {
     public interface IEmployeeService
     {
+
+        //add from the parent table not from the child indepenedently 
+
         Task<GenericResponse<Employee>> GetEmployeeByIdAsync(int id);
         Task<GenericResponse<IEnumerable<IdentityError>>> RegisterEmployeeAsync(RegisterEmployeeDto form);
         Task<GenericResponse<Employee>> UpdateEmployeeAsync(Employee employee);

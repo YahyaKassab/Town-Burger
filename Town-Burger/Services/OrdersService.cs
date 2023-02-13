@@ -10,6 +10,10 @@ namespace Town_Burger.Services
 {
     public interface IOrdersService
     {
+
+
+        //add from the parent table not from the child indepenedently 
+
         Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart);
         Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId);
         Task<GenericResponse<Order>> PlaceOrder(int customerId);

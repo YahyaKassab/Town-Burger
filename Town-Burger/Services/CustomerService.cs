@@ -11,6 +11,8 @@ namespace Town_Burger.Services
 {
     public interface ICustomerService
     {
+        //add from the parent table not from the child indepenedently 
+
         Task<GenericResponse<Address>> AddAddressAsync(AddressDto address);
         GenericResponse<Address> UpdateAddress(Address address);
         Task<GenericResponse<string>> DeleteAddressAsync(int addressId);
