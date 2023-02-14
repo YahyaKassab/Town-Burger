@@ -24,7 +24,7 @@ namespace Town_Burger.Services
 
         Task<GenericResponse<User>> AddToRole(string userId, string roleName);
         Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName);
-        Task<GenericResponse<(string token, DateTime expire)>> LoginAsync(LoginDto form);
+        Task<GenericResponse<ReturnedCustomer>> LoginCustomerAsync(LoginDto form);
         Task<GenericResponse<string>> ConfirmEmailAsync(string userId, string token);
         Task<GenericResponse<string>> ForgetPasswordAsync(string email);
         Task<GenericResponse<string>> ResetPasswordAsync(ResetPasswordDto model);
@@ -33,15 +33,17 @@ namespace Town_Burger.Services
     public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
+        private readonly ICustomerService _customerService;
         private IConfiguration _configuration;
         private readonly AppDbContext _context;
-        private readonly IMailService _mailService ;
-        public UserService(UserManager<User> userManager, IConfiguration configuration, AppDbContext context, IMailService mailService)
+        private readonly IMailService _mailService;
+        public UserService(UserManager<User> userManager, IConfiguration configuration, AppDbContext context, IMailService mailService, ICustomerService customerService)
         {
             _userManager = userManager;
             _configuration = configuration;
             _context = context;
             _mailService = mailService;
+            _customerService = customerService;
         }
 
 
@@ -59,7 +61,7 @@ namespace Town_Burger.Services
                     Message = "User or RoleName are null"
                 };
             var result = await _userManager.AddToRoleAsync(user, roleName);
-            if(result.Succeeded)
+            if (result.Succeeded)
             {
                 return new GenericResponse<User>
                 {
@@ -100,25 +102,20 @@ namespace Town_Burger.Services
             };
         }
 
-        public async Task<GenericResponse<(string token,DateTime expire)>> LoginAsync(LoginDto form)
+        public async Task<GenericResponse<ReturnedCustomer>> LoginCustomerAsync(LoginDto form)
         {
             var user = await _userManager.FindByEmailAsync(form.Email);
-            if (user == null) return new GenericResponse<(string token, DateTime expire)>()
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+            if (user == null) return new GenericResponse<ReturnedCustomer>()
             {
                 IsSuccess = false,
                 Message = "Email Not Found"
             };
             //user exists
-            if(form.Password != form.ConfirmPassword)
-                return new GenericResponse<(string token, DateTime expire)>()
-                {
-                    IsSuccess = false,
-                    Message = "Passwords dont match"
-                };
-            //password match and user exists
+
             var result = await _userManager.CheckPasswordAsync(user, form.Password);
-            if(!result)
-                return new GenericResponse<(string token, DateTime expire)>()
+            if (!result)
+                return new GenericResponse<ReturnedCustomer>()
                 {
                     IsSuccess = false,
                     Message = "Wrong Password"
@@ -135,7 +132,7 @@ namespace Town_Burger.Services
                 new Claim(ClaimTypes.Email,form.Email),
                 new Claim(ClaimTypes.NameIdentifier,user.Id),
                 new Claim(ClaimTypes.MobilePhone,user.PhoneNumber),
-                
+
             }.Concat(roleClaimsAsArray);
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["AuthSettings:Key"]));
             var token = new JwtSecurityToken(
@@ -143,14 +140,22 @@ namespace Town_Burger.Services
                 audience: _configuration["AuthSettings:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddDays(1),
-                signingCredentials:new SigningCredentials(key,SecurityAlgorithms.HmacSha256)
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
                 );
-            string tokenAsString =  new JwtSecurityTokenHandler().WriteToken(token);
-            return new GenericResponse<(string token, DateTime expire)>()
+            string tokenAsString = new JwtSecurityTokenHandler().WriteToken(token);
+            return new GenericResponse<ReturnedCustomer>()
             {
                 IsSuccess = true,
                 Message = "Logged In Successfully",
-                Result = (tokenAsString,token.ValidTo)
+                Result = new ReturnedCustomer
+                {
+                        FullName = customer.FullName,
+                        Email = user.Email,
+                        Id = customer.Id,
+                        PhoneNumber = user.PhoneNumber,
+                        Token = tokenAsString,
+                        ExpireDate = token.ValidTo
+                }
             };
 
         }
@@ -159,7 +164,7 @@ namespace Town_Burger.Services
         public async Task<GenericResponse<string>> ConfirmEmailAsync(string userId, string token)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if(user == null)
+            if (user == null)
                 return new GenericResponse<string> { IsSuccess = false, Message = "User Not Found" };
 
             //decode the token
@@ -173,7 +178,7 @@ namespace Town_Burger.Services
                     IsSuccess = true,
                     Message = "Email Confirmed Successfully"
                 };
-            return new GenericResponse<string> { IsSuccess = false, Message = "Error Confirming the Email", Errors  = result.Errors.Select(e=>e.Description).ToArray() };
+            return new GenericResponse<string> { IsSuccess = false, Message = "Error Confirming the Email", Errors = result.Errors.Select(e => e.Description).ToArray() };
 
 
 
@@ -186,7 +191,7 @@ namespace Town_Burger.Services
             if (user == null)
                 return new GenericResponse<string> { IsSuccess = false, Message = "User Not Found" };
             //user exists
-            
+
             var result = await _mailService.SendResetPasswordEmail(email);
             if (result.IsSuccess)
                 return new GenericResponse<string>

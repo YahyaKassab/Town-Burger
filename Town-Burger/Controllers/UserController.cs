@@ -43,7 +43,7 @@ namespace Town_Burger.Controllers
         public async Task<IActionResult> LoginAsync(LoginDto form)
         {
             if(!ModelState.IsValid) return BadRequest("Some Fields are not valid");
-            var result = await _userService.LoginAsync(form);
+            var result = await _userService.LoginCustomerAsync(form);
             if(!result.IsSuccess)
                 return BadRequest(result);
             return Ok(result);
@@ -78,7 +78,8 @@ namespace Town_Burger.Controllers
             var result = await _userService.ResetPasswordAsync(model);
             if (!result.IsSuccess)
                 return BadRequest(result);
-            return Redirect($"{_configuration["FrontUrl"]}");
+
+            return Ok(result);
         }
 
         [HttpGet("GetCustomerById")]

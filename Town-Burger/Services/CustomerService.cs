@@ -54,6 +54,14 @@ namespace Town_Burger.Services
                     IsSuccess = false,
                     Message = "Passwords dont match"
                 };
+            //check if email exists
+            var _customer = await _userManager.FindByEmailAsync(form.Email);
+            if (_customer != null)
+                return new GenericResponse<IEnumerable<IdentityError>>
+                {
+                    IsSuccess = false,
+                    Message = "Email Already used"
+                };
 
             //form isnt null
             //passwords match
