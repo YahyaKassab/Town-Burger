@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using SendGrid.Helpers.Mail;
+using System.Text;
 using Town_Burger.Models;
 using Town_Burger.Models.Context;
 using Town_Burger.Models.Dto;
@@ -26,11 +29,14 @@ namespace Town_Burger.Services
     public class CustomerService:ICustomerService
     {
         private UserManager<User> _userManager;
+        private IConfiguration _configuration;
         private readonly AppDbContext _context;
-        public CustomerService(UserManager<User> userManager, AppDbContext context)
+        private readonly IMailService _mailService;
+        public CustomerService(UserManager<User> userManager, AppDbContext context, IMailService mailService)
         {
             _userManager = userManager;
             _context = context;
+            _mailService = mailService;
         }
         public async Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form)
         {
@@ -77,6 +83,12 @@ namespace Town_Burger.Services
             var result = await _userManager.CreateAsync(user);
             //succeeded
             await _userManager.AddToRoleAsync(user, "Customer");
+
+            //send confirm email
+
+            //generate the token
+
+            var result2 = await _mailService.SendConfirmEmail(user.Email);
             return new GenericResponse<IEnumerable<IdentityError>>()
             {
                 IsSuccess = true,

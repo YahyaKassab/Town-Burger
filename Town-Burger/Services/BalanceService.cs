@@ -40,16 +40,11 @@ namespace Town_Burger.Services
     public class BalanceService:IBalanceService
     {
         private readonly AppDbContext _context;
-        private UserManager<User> _userManager;
-        private readonly ICustomerService _cutomerService;
-        private readonly IEmployeeService _employeeService;
 
-        public BalanceService(AppDbContext context, UserManager<User> userManager, ICustomerService cutomerService, IEmployeeService employeeService)
+        public BalanceService(AppDbContext context)
         {
             _context = context;
-            _userManager = userManager;
-            _cutomerService = cutomerService;
-            _employeeService = employeeService;
+
         }
 
         public async Task<GenericResponse<double>> AddDepositAsync(int fromId, double amount)

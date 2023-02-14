@@ -31,12 +31,14 @@ namespace Town_Burger.Services
         private readonly AppDbContext _context;
         private readonly ICustomerService _customerService;
         private readonly IBalanceService _balanceService;
+        private readonly IMailService _mailService;
 
-        public OrdersService(AppDbContext context, ICustomerService customerService, IBalanceService balanceService)
+        public OrdersService(AppDbContext context, ICustomerService customerService, IBalanceService balanceService, IMailService mailService)
         {
             _context = context;
             _customerService = customerService;
             _balanceService = balanceService;
+            _mailService = mailService;
         }
 
         public async Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart)
@@ -114,6 +116,13 @@ namespace Town_Burger.Services
                         IsSuccess = false,
                         Message = _result.Message
                     };
+                var result = await _mailService.SendOrderPlacedEmail(customerId);
+                if (!result.IsSuccess)
+                    return new GenericResponse<Order>
+                    {
+                        IsSuccess = false,
+                        Message = _result.Message
+                    };
                 return new GenericResponse<Order>
                 {
                     IsSuccess = true,
@@ -162,6 +171,16 @@ namespace Town_Burger.Services
                 //Order Exists
                 order.State = state;
                 await _context.SaveChangesAsync();
+                if (state == 1)
+                {
+                    var result = await _mailService.SendOrderOutEmail(order.CustomerId);
+                    if (!result.IsSuccess)
+                        return new GenericResponse<int>
+                        {
+                            IsSuccess = false,
+                            Message = "Send Email Failed"
+                        };
+                }
 
                 return new GenericResponse<int>
                 {

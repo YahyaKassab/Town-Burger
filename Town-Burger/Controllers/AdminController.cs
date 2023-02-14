@@ -24,9 +24,10 @@ namespace Town_Burger.Controllers
         private readonly IMenuService _menuService;
         private readonly IReviewService _reviewService;
         private readonly ISecondarySevice _secondaryService;
+        private readonly IMailService _mailService;
 
 
-        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService, ISecondarySevice secondaryService, ICustomerService customerService)
+        public AdminController(IBalanceService balanceService, IUserService userService, UserManager<User> userManager, IEmployeeService employeeService, AppDbContext context, IOrdersService orderService, IMenuService menuService, IReviewService reviewService, ISecondarySevice secondaryService, ICustomerService customerService, IMailService mailService)
         {
             _balanceService = balanceService;
             _userService = userService;
@@ -38,6 +39,7 @@ namespace Town_Burger.Controllers
             _reviewService = reviewService;
             _secondaryService = secondaryService;
             _customerService = customerService;
+            _mailService = mailService;
         }
         //ok
         #region Menu
@@ -425,6 +427,26 @@ namespace Town_Burger.Controllers
         public async Task<IActionResult> GetPolices()
         {
             var result = await _secondaryService.GetOrderingPolicies();
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        #endregion
+
+        #region Mail
+        [HttpPost("SendConfirmEmail")]
+        public async Task<IActionResult> SendConfirmEmail(string email)
+        {
+            var result = await _mailService.SendConfirmEmail(email);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpPost("SendResetPasswordEmail")]
+        public async Task<IActionResult> SendResetPasswordEmail(string email)
+        {
+            var result = await _mailService.SendResetPasswordEmail(email);
             if(result.IsSuccess)
                 return Ok(result);
             return BadRequest(result);

@@ -21,17 +21,22 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //builder.Services.AddSingleton<Balance>();
+
+//My Services
 builder.Services.AddTransient<IBalanceService, BalanceService>();
-builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddTransient<ICustomerService, CustomerService>();
-builder.Services.AddTransient<IOrdersService, OrdersService>();
-builder.Services.AddTransient<IMenuService, MenuService>();
+builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<IMailService, MailService>();
+builder.Services.AddTransient<IMenuService, MenuService>();
+builder.Services.AddTransient<IOrdersService, OrdersService>();
 builder.Services.AddTransient<ISecondarySevice, SecondaryService>();
-builder.Services.AddTransient<AppDbContext, AppDbContext>();
+builder.Services.AddTransient<IUserService, UserService>();
+//builder.Services.AddTransient<AppDbContext, AppDbContext>();
+
+
 builder.Services.AddDbContext<AppDbContext>();
+
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -40,6 +45,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 }).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
 
 builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

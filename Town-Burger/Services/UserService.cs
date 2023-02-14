@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using SendGrid.Helpers.Mail;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
@@ -23,8 +25,9 @@ namespace Town_Burger.Services
         Task<GenericResponse<User>> AddToRole(string userId, string roleName);
         Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName);
         Task<GenericResponse<(string token, DateTime expire)>> LoginAsync(LoginDto form);
-        Task<GenericResponse<string>> ConfirmEmailAsync(string email);
+        Task<GenericResponse<string>> ConfirmEmailAsync(string userId, string token);
         Task<GenericResponse<string>> ForgetPasswordAsync(string email);
+        Task<GenericResponse<string>> ResetPasswordAsync(ResetPasswordDto model);
         Task<GenericResponse<string>> DeleteUserAsync(string userId);
     }
     public class UserService : IUserService
@@ -32,14 +35,16 @@ namespace Town_Burger.Services
         private readonly UserManager<User> _userManager;
         private IConfiguration _configuration;
         private readonly AppDbContext _context;
-        public UserService(UserManager<User> userManager, IConfiguration configuration, AppDbContext context)
+        private readonly IMailService _mailService ;
+        public UserService(UserManager<User> userManager, IConfiguration configuration, AppDbContext context, IMailService mailService)
         {
             _userManager = userManager;
             _configuration = configuration;
             _context = context;
+            _mailService = mailService;
         }
 
-       
+
 
         //modify customer and employee services
 
@@ -151,14 +156,50 @@ namespace Town_Burger.Services
         }
 
 
-        public async Task<GenericResponse<string>> ConfirmEmailAsync(string email)
+        public async Task<GenericResponse<string>> ConfirmEmailAsync(string userId, string token)
         {
-            throw new NotImplementedException();
+            var user = await _userManager.FindByIdAsync(userId);
+            if(user == null)
+                return new GenericResponse<string> { IsSuccess = false, Message = "User Not Found" };
+
+            //decode the token
+            var decodedToken = WebEncoders.Base64UrlDecode(token);
+            var normalToken = Encoding.UTF8.GetString(decodedToken);
+            var result = await _userManager.ConfirmEmailAsync(user, normalToken);
+
+            if (result.Succeeded)
+                return new GenericResponse<string>
+                {
+                    IsSuccess = true,
+                    Message = "Email Confirmed Successfully"
+                };
+            return new GenericResponse<string> { IsSuccess = false, Message = "Error Confirming the Email", Errors  = result.Errors.Select(e=>e.Description).ToArray() };
+
+
+
         }
 
         public async Task<GenericResponse<string>> ForgetPasswordAsync(string email)
         {
-            throw new NotImplementedException();
+            //check if there is a user
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return new GenericResponse<string> { IsSuccess = false, Message = "User Not Found" };
+            //user exists
+            
+            var result = await _mailService.SendResetPasswordEmail(email);
+            if (result.IsSuccess)
+                return new GenericResponse<string>
+                {
+                    IsSuccess = true,
+                    Message = "Email Sent Successfully"
+                };
+            return new GenericResponse<string>
+            {
+                IsSuccess = false,
+                Message = result.Message
+            };
+
         }
 
         public async Task<GenericResponse<string>> DeleteUserAsync(string userId)
@@ -185,7 +226,31 @@ namespace Town_Burger.Services
             }
         }
 
+        public async Task<GenericResponse<string>> ResetPasswordAsync(ResetPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return new GenericResponse<string> { IsSuccess = false, Message = "User Not found" };
 
+
+            //decode the token
+            var decodedToken = WebEncoders.Base64UrlDecode(model.Token);
+            var normalToken = Encoding.UTF8.GetString(decodedToken);
+            var result = await _userManager.ResetPasswordAsync(user, normalToken, model.Password);
+
+            if (result.Succeeded)
+                return new GenericResponse<string>
+                {
+                    IsSuccess = true,
+                    Message = "Password Changed Successfully"
+                };
+            return new GenericResponse<string>()
+            {
+                IsSuccess = false,
+                Message = "Failed To Reset the password",
+                Errors = result.Errors.Select(e => e.Description).ToArray(),
+            };
+        }
     }
 
 }

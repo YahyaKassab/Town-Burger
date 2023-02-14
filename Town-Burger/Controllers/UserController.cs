@@ -14,17 +14,19 @@ namespace Town_Burger.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private IConfiguration _configuration;
         private readonly IEmployeeService _employeeService;
         private readonly ICustomerService _customerService;
         private readonly IMailService _mailService;
         private readonly AppDbContext _context;
-        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService, AppDbContext context, IMailService mailService)
+        public UserController(IUserService userService, IEmployeeService employeeService, ICustomerService customerService, AppDbContext context, IMailService mailService, IConfiguration configuration)
         {
             _userService = userService;
             _employeeService = employeeService;
             _customerService = customerService;
             _context = context;
             _mailService = mailService;
+            _configuration = configuration;
         }
 
         [HttpPost("AddCustomer")]
@@ -45,6 +47,38 @@ namespace Town_Burger.Controllers
             if(!result.IsSuccess)
                 return BadRequest(result);
             return Ok(result);
+        }
+
+        [HttpGet("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string userId,string token)
+        {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token)) return NotFound();
+
+            var result = await _userService.ConfirmEmailAsync(userId, token);
+            if (result.IsSuccess)
+                return Redirect($"{_configuration["FrontUrl"]}/email-confirmed");
+
+            return BadRequest(result);
+
+        }
+
+        [HttpGet("ForgetPassword")]
+        public async Task<IActionResult> ForgetPassword(string email)
+        {
+            var result = await _userService.ForgetPasswordAsync(email);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(model);
+            var result = await _userService.ResetPasswordAsync(model);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Redirect($"{_configuration["FrontUrl"]}");
         }
 
         [HttpGet("GetCustomerById")]
