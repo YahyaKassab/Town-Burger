@@ -13,8 +13,8 @@ namespace Town_Burger.Services
     {
 
 
-        Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart);
-        Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId);
+        Task<GenericResponse<Cart>> UpdateCartAsync(int cartId,IEnumerable<ReturnedCartItem> items);
+        Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId);
         Task<GenericResponse<Order>> PlaceOrder(int customerId);
         Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
         Task<GenericResponse<Order>> EditOrder(Order order);
@@ -41,8 +41,9 @@ namespace Town_Burger.Services
             _mailService = mailService;
         }
 
-        public async Task<GenericResponse<Cart>> UpdateCartAsync(Cart cart)
+        public async Task<GenericResponse<Cart>> UpdateCartAsync(int cartId, IEnumerable<ReturnedCartItem> items)
         {
+            var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).AsNoTracking().FirstOrDefaultAsync(c=>c.Id == cartId);
             if (cart == null)
                 return new GenericResponse<Cart>
                 {
@@ -52,17 +53,26 @@ namespace Town_Burger.Services
             //cart isnt null
             try
             {
+                cart.Items.Clear();
                 double total = 0;
-                if(cart.Items.Any())
+                if(items.Any())
                 {
-                    foreach (var item in cart.Items)
+                    foreach (var item in items)
                     {
-                        item.Item = await _context.MenuItems.FindAsync(item.MenuItemId);
-                        item.CartId = cart.Id;
+                        cart.Items.Add(new CartItem
+                        {
+                            Item = item.Item,
+                            Quantity = item.Quantity,
+                            CartId = cartId,
+                            Cart = cart,
+                            Description = item.Description,
+                            MenuItemId = item.Item.Id
+                        });
                         total += item.Quantity * item.Item.Price;
                     }
                     cart.TotalPrice = total;
                 }
+                _context.Update(cart);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Cart>
                 {
@@ -139,20 +149,34 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId)
+        public async Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId)
         {
             var cart = _context.Carts.Include(e=>e.Items).ThenInclude(e=>e.Item).FirstOrDefault(x => x.CustomerId == customerId);
             if (cart == null)
-                return new GenericResponse<Cart>
+                return new GenericResponse<ReturnedCart>
                 {
                     IsSuccess = false,
                     Message = "Cart Doesnt exist",
                 };
-            return new GenericResponse<Cart>
+            var items = new List<ReturnedCartItem>();
+            foreach(var item in cart.Items)
+            {
+                items.Add(new ReturnedCartItem
+                {
+                    Description = item.Description,
+                    Item = item.Item,
+                    Quantity = item.Quantity,
+                });
+            }
+            return new GenericResponse<ReturnedCart>
             {
                 IsSuccess = true,
                 Message = "Cart Got Successfully",
-                Result = cart
+                Result = new ReturnedCart
+                {
+                    Id = cart.Id,
+                    Items =items
+                }
             };
 
         }
