@@ -11,12 +11,12 @@ namespace Town_Burger.Services
 
         //add from the parent table not from the child indepenedently 
 
-        Task<GenericResponse<Review>> GetReviewById(int Id);
+        Task<GenericResponse<ReturnedReview>> GetReviewById(int Id);
         Task<GenericResponse<Review>> AddReviewAsync(ReviewDto review);
         Task<GenericResponse<Review>> UpdateReview(Review review);
         Task<GenericResponse<Review>> DeleteReview(int reviewId);
-        Task<GenericResponse<IEnumerable<Review>>> GetLatest();
-        Task<GenericResponse<IEnumerable<Review>>> GetAll();
+        Task<GenericResponse<IEnumerable<ReturnedReview>>> GetLatest();
+        Task<GenericResponse<IEnumerable<ReturnedReview>>> GetAll();
     }
     public class ReviewService : IReviewService
     {
@@ -92,26 +92,43 @@ namespace Town_Burger.Services
 
         }
 
-        public async Task<GenericResponse<IEnumerable<Review>>> GetAll()
+        public async Task<GenericResponse<IEnumerable<ReturnedReview>>> GetAll()
         {
             try
             {
-                var reviews = await _context.Reviews.Include(r=>r.Customer).ToListAsync();
+                var reviews = await _context.Reviews.Include(r=>r.Customer).ThenInclude(c=>c.User).ToListAsync();
+                var _reviewsToReturn = new List<ReturnedReview>();
+                foreach (var review in reviews)
+                {
+                    _reviewsToReturn.Add(
+                        new ReturnedReview
+                        {
+                            Title = review.Title,
+                            Description = review.Description,
+                            CustomerEmail = review.Customer.User.Email,
+                            CustomerId = review.CustomerId,
+                            CustomerName = review.Customer.FullName,
+                            Id = review.Id,
+                            Rating = review.Rating,
+                            Time = review.Time,
+                        }
+                        );
+                }
                 if (reviews.Count == 0)
-                    return new GenericResponse<IEnumerable<Review>>()
+                    return new GenericResponse<IEnumerable<ReturnedReview>>()
                     {
                         IsSuccess = true,
                         Message = "No Reviews yet"
                     };
-                return new GenericResponse<IEnumerable<Review>>()
+                return new GenericResponse<IEnumerable<ReturnedReview>>()
                 {
                     IsSuccess = true,
                     Message = "Reviews fetched Successfully",
-                    Result = reviews
+                    Result = _reviewsToReturn
                 };
             }catch(Exception ex)
             {
-                return new GenericResponse<IEnumerable<Review>>
+                return new GenericResponse<IEnumerable<ReturnedReview>>
                 {
                     IsSuccess = false,
                     Message = ex.Message
@@ -119,18 +136,18 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<IEnumerable<Review>>> GetLatest()
+        public async Task<GenericResponse<IEnumerable<ReturnedReview>>> GetLatest()
         {
             var Reviews = await GetAll();
             if (!Reviews.IsSuccess)
-                return new GenericResponse<IEnumerable<Review>>()
+                return new GenericResponse<IEnumerable<ReturnedReview>>()
                 {
                     IsSuccess = false,
                     Message = Reviews.Message
                 };
             var latest = Reviews.Result.OrderByDescending(e => e.Time).Take(3);
             
-            return new GenericResponse<IEnumerable<Review>>()
+            return new GenericResponse<IEnumerable<ReturnedReview>>()
             {
                 IsSuccess = true,
                 Message = Reviews.Message,
@@ -138,23 +155,33 @@ namespace Town_Burger.Services
             };
         }
 
-        public async Task<GenericResponse<Review>> GetReviewById(int Id)
+        public async Task<GenericResponse<ReturnedReview>> GetReviewById(int Id)
         {
             try
             {
-                var review = await _context.Reviews.FindAsync(Id);
+                var review = await _context.Reviews.Include(r=>r.Customer).ThenInclude(c=>c.User).FirstOrDefaultAsync(r=>r.Id == Id);
                 if (review == null)
-                    return new GenericResponse<Review> { IsSuccess = false, Message = "Review not found" };
-                return new GenericResponse<Review>
+                    return new GenericResponse<ReturnedReview> { IsSuccess = false, Message = "Review not found" };
+                return new GenericResponse<ReturnedReview>
                 {
                     IsSuccess = true,
                     Message = "Review Fetched Successfully",
-                    Result = review
+                    Result = new ReturnedReview
+                    {
+                        Id = review.Id,
+                        Rating= review.Rating,
+                        CustomerEmail = review.Customer.User.Email,
+                        Description= review.Description,
+                        CustomerId= review.CustomerId,
+                        CustomerName = review.Customer.FullName,
+                        Time= review.Time,
+                        Title = review.Title,
+                    }
                 };
 
             }catch (Exception ex)
             {
-                return new GenericResponse<Review>
+                return new GenericResponse<ReturnedReview>
                 {
                     IsSuccess = false,
                     Message = ex.Message

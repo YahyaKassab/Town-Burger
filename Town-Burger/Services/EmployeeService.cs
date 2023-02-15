@@ -57,8 +57,6 @@ namespace Town_Burger.Services
             };
             if (form.DaysOfWork != null)
                 employee.DaysOfWork = form.DaysOfWork;
-            if(form.PictureSource != null)
-                employee.PictureSource = form.PictureSource;
 
             //create the user along with the employee
             User user = new User()

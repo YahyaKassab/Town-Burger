@@ -130,5 +130,13 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
 
         }
+
+        [HttpGet("CheckToken")]
+        public async Task<IActionResult> Check(string token)
+        {
+            var result = await _userService.CheckToken(token);
+
+            return Ok(result);
+        }
     }
 }

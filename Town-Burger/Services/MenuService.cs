@@ -35,7 +35,6 @@ namespace Town_Burger.Services
                     Title = model.Title,
                     Type = model.Type,
                     Description = model.Description,
-                    ImageSource = model.ImageSource,
                     Price = model.Price,
                 };
                 var result = await _context.MenuItems.AddAsync(menuItem);

@@ -28,9 +28,9 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
         [HttpPut("UpdateCart")]
-        public async Task<IActionResult> UpdateCart(int cartId,IEnumerable<ReturnedCartItem> items)
+        public async Task<IActionResult> UpdateCart(int cartId, IEnumerable<UpdateCartItemDto> Items)
         {
-            var result = await _ordersService.UpdateCartAsync(cartId, items);
+            var result = await _ordersService.UpdateCartAsync(cartId, Items);
             if(result.IsSuccess )
             {
                 return Ok(result);
@@ -50,6 +50,14 @@ namespace Town_Burger.Controllers
                 return Ok(result);
             }
             return BadRequest(result);
+        }
+
+        [HttpPut("ClearCart")]
+        public async Task<IActionResult> Clear(int id)
+        {
+            var result = await _ordersService.clearCart(id);
+            return Ok(result);
+
         }
     }
 }

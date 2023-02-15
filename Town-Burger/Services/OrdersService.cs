@@ -13,7 +13,7 @@ namespace Town_Burger.Services
     {
 
 
-        Task<GenericResponse<Cart>> UpdateCartAsync(int cartId,IEnumerable<ReturnedCartItem> items);
+        Task<GenericResponse<Cart>> UpdateCartAsync(int cartId, IEnumerable<UpdateCartItemDto> Items);
         Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId);
         Task<GenericResponse<Order>> PlaceOrder(int customerId);
         Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
@@ -24,6 +24,7 @@ namespace Town_Burger.Services
 
         Task<GenericResponse<int>> UpdateState(int orderId, int state);
         Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered();
+        Task<Cart> clearCart(int id);
     }
 
     public class OrdersService : IOrdersService
@@ -40,10 +41,16 @@ namespace Town_Burger.Services
             _balanceService = balanceService;
             _mailService = mailService;
         }
-
-        public async Task<GenericResponse<Cart>> UpdateCartAsync(int cartId, IEnumerable<ReturnedCartItem> items)
+        public async Task<Cart> clearCart(int id)
         {
-            var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).AsNoTracking().FirstOrDefaultAsync(c=>c.Id == cartId);
+            var cart = await _context.Carts.Include(c=>c.Items).FirstOrDefaultAsync(c=>c.Id == id);
+            cart.Items.Clear();
+            _context.SaveChangesAsync();
+            return cart;
+        }
+        public async Task<GenericResponse<Cart>> UpdateCartAsync(int cartId, IEnumerable<UpdateCartItemDto> Items)
+        {
+            var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).FirstOrDefaultAsync(c=>c.Id == cartId);
             if (cart == null)
                 return new GenericResponse<Cart>
                 {
@@ -53,26 +60,36 @@ namespace Town_Burger.Services
             //cart isnt null
             try
             {
-                cart.Items.Clear();
+                await clearCart(cartId);
                 double total = 0;
-                if(items.Any())
+                if(Items.Any())
                 {
-                    foreach (var item in items)
+                    foreach (var cartItem in Items)
                     {
+                        //menu item
+                        var item = await _context.MenuItems.FindAsync(cartItem.ItemId);
+
+                        if (item == null)
+                            return new GenericResponse<Cart>
+                            {
+                                IsSuccess = false,
+                                Message = "Menu Item Not Found"
+                            };
+
                         cart.Items.Add(new CartItem
                         {
-                            Item = item.Item,
-                            Quantity = item.Quantity,
+                            Item = item,
+                            Quantity = cartItem.Quantity,
                             CartId = cartId,
                             Cart = cart,
-                            Description = item.Description,
-                            MenuItemId = item.Item.Id
+                            Description = cartItem.Description,
+                            MenuItemId = item.Id
                         });
-                        total += item.Quantity * item.Item.Price;
+                        total += cartItem.Quantity * item.Price;
                     }
                     cart.TotalPrice = total;
                 }
-                _context.Update(cart);
+                //_context.Update(cart);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Cart>
                 {

@@ -29,6 +29,8 @@ namespace Town_Burger.Services
         Task<GenericResponse<string>> ForgetPasswordAsync(string email);
         Task<GenericResponse<string>> ResetPasswordAsync(ResetPasswordDto model);
         Task<GenericResponse<string>> DeleteUserAsync(string userId);
+        Task<bool> CheckToken(string token);
+        string DecodeToken(string token);
     }
     public class UserService : IUserService
     {
@@ -120,13 +122,21 @@ namespace Town_Burger.Services
                     IsSuccess = false,
                     Message = "Wrong Password"
                 };
-            //Generate token and login
+
+            //Get the data for the token
+
+
+            //Get the Roles
             var roles = await _userManager.GetRolesAsync(user);
+
+            //Put Them As Claims
             var rolesClaims = new List<Claim>();
             foreach (var role in roles)
                 rolesClaims.Add(new Claim(ClaimTypes.Role, role));
             var roleClaimsAsArray = rolesClaims.ToArray();
 
+
+            //Create the claims
             var claims = new Claim[]
             {
                 new Claim(ClaimTypes.Email,form.Email),
@@ -134,14 +144,21 @@ namespace Town_Burger.Services
                 new Claim(ClaimTypes.MobilePhone,user.PhoneNumber),
 
             }.Concat(roleClaimsAsArray);
+
+
+            //Create the key
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["AuthSettings:Key"]));
+
+            //Create the token
             var token = new JwtSecurityToken(
                 issuer: _configuration["AuthSettings:Issuer"],
                 audience: _configuration["AuthSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
                 );
+
+            //Convert to string
             string tokenAsString = new JwtSecurityTokenHandler().WriteToken(token);
             return new GenericResponse<ReturnedCustomer>()
             {
@@ -255,6 +272,26 @@ namespace Town_Burger.Services
                 Message = "Failed To Reset the password",
                 Errors = result.Errors.Select(e => e.Description).ToArray(),
             };
+        }
+
+        public async Task<bool> CheckToken(string token)
+        {
+            var jwtToken = new JwtSecurityToken(token);
+            if (jwtToken == null)
+                return false;
+                
+            //if not valid
+            if(jwtToken.ValidTo < DateTime.UtcNow)
+                return false;
+
+            return true;
+        }
+
+        public string DecodeToken(string token)
+        {
+            var decodedToken = WebEncoders.Base64UrlDecode(token);
+            var normalToken = Encoding.UTF8.GetString(decodedToken);
+            return normalToken;
         }
     }
 

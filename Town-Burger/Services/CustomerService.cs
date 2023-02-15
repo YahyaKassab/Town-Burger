@@ -167,8 +167,8 @@ namespace Town_Burger.Services
                     IsSuccess = false,
                     Message = "Customer Not found"
                 };
-
-            var result =  _context.Remove(customer.Cart);
+            if(customer.Cart != null)
+                _context.Remove(customer.Cart);
             _context.SaveChanges();
             var user = await _userManager.FindByIdAsync(customer.UserId);
 
