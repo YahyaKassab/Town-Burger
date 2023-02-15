@@ -1,9 +1,8 @@
 ﻿namespace Town_Burger.Models.Dto
 {
-    public class UpdateCartItemDto
+    public class UpdateCartDto
     {
-        public int ItemId { get; set; }
-        public string Description { get; set; }
-        public int Quantity { get; set; }
+        public int Id { get; set; }
+        public IEnumerable<UpdateCartItemDto> Items { get; set; }
     }
 }

@@ -13,9 +13,9 @@ namespace Town_Burger.Services
     {
 
 
-        Task<GenericResponse<Cart>> UpdateCartAsync(int cartId, IEnumerable<UpdateCartItemDto> Items);
+        Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model);
         Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId);
-        Task<GenericResponse<Order>> PlaceOrder(int customerId);
+        Task<GenericResponse<Order>> PlaceOrder(int customerId, int addressId);
         Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
         Task<GenericResponse<Order>> EditOrder(Order order);
         Task<GenericResponse<Order>> DeleteOrder(int orderId);
@@ -44,13 +44,13 @@ namespace Town_Burger.Services
         public async Task<Cart> clearCart(int id)
         {
             var cart = await _context.Carts.Include(c=>c.Items).FirstOrDefaultAsync(c=>c.Id == id);
-            cart.Items.Clear();
+            _context.CartItems.RemoveRange(cart.Items);
             _context.SaveChangesAsync();
             return cart;
         }
-        public async Task<GenericResponse<Cart>> UpdateCartAsync(int cartId, IEnumerable<UpdateCartItemDto> Items)
+        public async Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model)
         {
-            var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).FirstOrDefaultAsync(c=>c.Id == cartId);
+            var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).FirstOrDefaultAsync(c=>c.Id == model.Id);
             if (cart == null)
                 return new GenericResponse<Cart>
                 {
@@ -60,11 +60,11 @@ namespace Town_Burger.Services
             //cart isnt null
             try
             {
-                await clearCart(cartId);
+                await clearCart(model.Id);
                 double total = 0;
-                if(Items.Any())
+                if(model.Items.Any())
                 {
-                    foreach (var cartItem in Items)
+                    foreach (var cartItem in model.Items)
                     {
                         //menu item
                         var item = await _context.MenuItems.FindAsync(cartItem.ItemId);
@@ -80,7 +80,7 @@ namespace Town_Burger.Services
                         {
                             Item = item,
                             Quantity = cartItem.Quantity,
-                            CartId = cartId,
+                            CartId = model.Id,
                             Cart = cart,
                             Description = cartItem.Description,
                             MenuItemId = item.Id
@@ -107,7 +107,7 @@ namespace Town_Burger.Services
             }
             
         }
-        public async Task<GenericResponse<Order>> PlaceOrder(int customerId)
+        public async Task<GenericResponse<Order>> PlaceOrder(int customerId, int addressId)
         {
             try
             {
@@ -118,11 +118,14 @@ namespace Town_Burger.Services
                         IsSuccess = false,
                         Message = "Customer doesnt exist"
                     };
+                var address = await _context.Addresses.FindAsync(addressId);
                 var _order = new Order()
                 {
                     Cart = customer.Cart,
                     CustomerId = customerId,
                     PlacedIn = DateTime.Now,
+                    AddressId = addressId,
+                    Address = address,
                     State = 0
                 };
                 customer.Orders.Add(_order);
@@ -183,6 +186,7 @@ namespace Town_Burger.Services
                     Description = item.Description,
                     Item = item.Item,
                     Quantity = item.Quantity,
+                    ItemId= item.MenuItemId,
                 });
             }
             return new GenericResponse<ReturnedCart>

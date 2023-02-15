@@ -18,7 +18,7 @@ namespace Town_Burger.Services
 
         Task<GenericResponse<Address>> AddAddressAsync(AddressDto address);
         GenericResponse<Address> UpdateAddress(Address address);
-        Task<GenericResponse<IEnumerable<Address>>> GetAddressesByCustomerId(int customerId);
+        Task<GenericResponse<IEnumerable<ReturnedAddress>>> GetAddressesByCustomerId(int customerId);
         Task<GenericResponse<string>> DeleteAddressAsync(int addressId);
         Task<GenericResponse<Customer>> GetCustomerByIdAsync(int id);
         Task<GenericResponse<IEnumerable<Customer>>> GetAllCustomers();
@@ -304,20 +304,32 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<IEnumerable<Address>>> GetAddressesByCustomerId(int customerId)
+        public async Task<GenericResponse<IEnumerable<ReturnedAddress>>> GetAddressesByCustomerId(int customerId)
         {
             var addresses = await _context.Addresses.Where(a=>a.CustomerId == customerId).ToListAsync();
+            var returnedAddresses = new List<ReturnedAddress>();
+            foreach (var address in addresses)
+            {
+                returnedAddresses.Add(
+                    new ReturnedAddress
+                    {
+                        Id = address.Id,
+                        Details = address.Details,
+                        Street = address.Street,
+                    }
+                    );
+            }
             if (addresses.Count == 0)
-                return new GenericResponse<IEnumerable<Address>>
+                return new GenericResponse<IEnumerable<ReturnedAddress>>
                 {
                     IsSuccess = false,
                     Message = "You dont have any addresses"
                 };
-            return new GenericResponse<IEnumerable<Address>>
+            return new GenericResponse<IEnumerable<ReturnedAddress>>
             {
                 IsSuccess = true,
                 Message = "Addresses fetched successfully",
-                Result = addresses
+                Result = returnedAddresses
             };
 
         }

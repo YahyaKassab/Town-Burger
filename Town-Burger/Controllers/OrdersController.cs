@@ -28,9 +28,9 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
         [HttpPut("UpdateCart")]
-        public async Task<IActionResult> UpdateCart(int cartId, IEnumerable<UpdateCartItemDto> Items)
+        public async Task<IActionResult> UpdateCart(UpdateCartDto model)
         {
-            var result = await _ordersService.UpdateCartAsync(cartId, Items);
+            var result = await _ordersService.UpdateCartAsync(model);
             if(result.IsSuccess )
             {
                 return Ok(result);
@@ -38,13 +38,13 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
         [HttpPost("PlaceOrder")]
-        public async Task<IActionResult> PlaceOrder(int customerId)
+        public async Task<IActionResult> PlaceOrder(int customerId, int addressId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var result = await _ordersService.PlaceOrder(customerId);
+            var result = await _ordersService.PlaceOrder(customerId, addressId);
             if(result.IsSuccess)
             {
                 return Ok(result);
