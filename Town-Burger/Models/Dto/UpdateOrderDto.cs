@@ -3,7 +3,7 @@
     public class UpdateOrderDto
     {
         public int Id { get; set; }
-        public Cart? Cart { get; set; }
+        public UpdateCartDto? Cart { get; set; }
         public int? AddressId { get; set; }
     }
 }

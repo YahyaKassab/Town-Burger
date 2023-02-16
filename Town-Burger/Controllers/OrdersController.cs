@@ -51,13 +51,5 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
-
-        [HttpPut("ClearCart")]
-        public async Task<IActionResult> Clear(int id)
-        {
-            var result = await _ordersService.clearCart(id);
-            return Ok(result);
-
-        }
     }
 }

@@ -17,15 +17,14 @@ namespace Town_Burger.Services
         Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model);
         Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId);
         Task<GenericResponse<Order>> PlaceOrder(int addressId);
-        Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
+        Task<GenericResponse<ReturnedOrder>> GetOrderByIdAsync(int orderId);
         Task<GenericResponse<Order>> EditOrder(UpdateOrderDto model);
         Task<GenericResponse<Order>> DeleteOrder(int orderId);
 
-        Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId);
+        Task<GenericResponse<IEnumerable<ReturnedOrder>>> GetOrdersByCustomerId(int customerId);
 
         Task<GenericResponse<int>> UpdateState(int orderId, int state);
         Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered();
-        Task<Cart> clearCart(int id);
     }
 
     public class OrdersService : IOrdersService
@@ -42,14 +41,6 @@ namespace Town_Burger.Services
             _balanceService = balanceService;
             _mailService = mailService;
         }
-        public async Task<Cart> clearCart(int id)
-        {
-            var cart = await _context.Carts.Include(c=>c.Items).FirstOrDefaultAsync(c=>c.Id == id);
-            _context.CartItems.RemoveRange(cart.Items);
-            _context.SaveChangesAsync();
-            return cart;
-        }
-
 
         //Add migration
         //fix anything includes orders
@@ -68,10 +59,14 @@ namespace Town_Burger.Services
             //cart isnt null
             try
             {
-                await clearCart(model.Id);
+
+                //clearing the items
+                _context.RemoveRange(cart.Items);
                 double total = 0;
                 if(model.Items.Any())
                 {
+
+                    //adding new items
                     foreach (var cartItem in model.Items)
                     {
                         //menu item
@@ -119,31 +114,34 @@ namespace Town_Burger.Services
         {
             try
             {
-                var address = await _context.Addresses.Include(a => a.Orders).Include(a=>a.Customer).FirstOrDefaultAsync(a => a.Id == addressId);
+
+                //get the address
+                //with the customer
+                var address = await _context.Addresses.Include(a => a.Orders).FirstOrDefaultAsync(a => a.Id == addressId);
+                var customer = await _context.Customers.Include(c => c.Orders).Include(c => c.Cart).ThenInclude(c => c.Items).FirstOrDefaultAsync(c=>c.Id == address.CustomerId);
                 if (address == null)
                     return new GenericResponse<Order>
                     {
                         IsSuccess = false,
                         Message = "Address doesnt exist"
                     };
+
+                //create the order
                 var _order = new Order()
                 {
-                    Cart = address.Customer.Cart,
+                    Cart = new Cart
+                    {
+                        Items = customer.Cart.Items,
+                        TotalPrice= customer.Cart.TotalPrice,
+                    },
                     PlacedIn = DateTime.Now,
-                    State = 0
+                    AddressId = addressId,
+                    Address = address,
                 };
-                address.Orders.Add(_order);
+                customer.Orders.Add(_order);
+                _context.CartItems.RemoveRange(customer.Cart.Items.ToList());
                 await _context.SaveChangesAsync();
-                address.Customer.Cart.CustomerId = null;
-                address.Customer.Cart.Customer = null;
-                address.Customer.Cart.OrderId = _order.Id;
-                address.Customer.Cart.Order = _order;
-                address.Customer.Cart = new Cart()
-                {
-                    CustomerId = address.CustomerId,
-                };
-                await _context.SaveChangesAsync();
-                var _result = await _balanceService.AddDepositAsync(address.CustomerId, address.Customer.Cart.TotalPrice);
+                var _result = await _balanceService.AddDepositAsync(address.CustomerId, _order.Cart.TotalPrice);
                 if (!_result.IsSuccess)
                     return new GenericResponse<Order>
                     {
@@ -316,20 +314,67 @@ namespace Town_Burger.Services
 
         }
 
-        public async Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId)
+        public async Task<GenericResponse<ReturnedOrder>> GetOrderByIdAsync(int orderId)
         {
-            var order = await _context.Orders.Include(o => o.Address).ThenInclude(a=>a.Customer).FirstOrDefaultAsync(o => o.Id == orderId);
+            var order = await _context.Orders.Include(o=>o.Cart).ThenInclude(c=>c.Items).ThenInclude(i=>i.Item).Include(o => o.Address).ThenInclude(a=>a.Customer).FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null)
-                return new GenericResponse<Order>
+                return new GenericResponse<ReturnedOrder>
                 {
                     IsSuccess = true,
                     Message = "No order with this id"
                 };
-            return new GenericResponse<Order>
+            var returnedCartItems = new List<ReturnedCartItem>();
+
+            foreach(var item in order.Cart.Items)
+            {
+                returnedCartItems.Add(
+                    new ReturnedCartItem
+                    {
+                        Description = item.Description,
+                        Quantity = item.Quantity,
+                        ItemId = item.MenuItemId,
+                        Item = item.Item
+
+                    }
+                    );
+            }
+
+            var returnedOrder = new ReturnedOrder
+            {
+                Id = orderId,
+                PlacedIn = new MyDate
+                {
+                    Year = order.PlacedIn.Year,
+                    Month = order.PlacedIn.Month + 1,
+                    Day = order.PlacedIn.Day,
+                    Hour = order.PlacedIn.Hour,
+                    Minute = order.PlacedIn.Minute,
+                    Second = order.PlacedIn.Second
+                },
+                Address = order.Address,
+                Cart = new ReturnedCart { 
+                Id = order.Cart.Id,
+                Items = returnedCartItems
+                },
+                State = order.State,
+            };
+            if (order.DeliveredIn.HasValue)
+            {
+                returnedOrder.DeliveredIn = new MyDate
+                {
+                    Year = order.DeliveredIn.Value.Year,
+                    Month = order.DeliveredIn.Value.Month + 1,
+                    Day = order.DeliveredIn.Value.Day,
+                    Hour = order.DeliveredIn.Value.Hour,
+                    Minute = order.DeliveredIn.Value.Minute,
+                    Second = order.DeliveredIn.Value.Second
+                };
+            }
+            return new GenericResponse<ReturnedOrder>
             {
                 IsSuccess = true,
                 Message = "Order Fetched Successfully",
-                Result = order
+                Result = returnedOrder
             };
         }
 
@@ -337,17 +382,39 @@ namespace Town_Burger.Services
         {
             try
             {
+
+                //address
                 var address = await _context.Addresses.Include(o => o.Orders).FirstOrDefaultAsync(o => o.Id == model.AddressId);
-                var order = address.Orders.FirstOrDefault(o => o.Id == model.Id);
 
-                //remove order from address and add to the new address
-
+                //order
+                var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == model.Id);
 
                 //if order soon
                 if (order.PlacedIn > DateTime.Now.AddMinutes(-15))
                 {
+                    //if the address is edited
+                    if(model.AddressId != order.AddressId)
+                    {
+                        //get the new address
+                        var newAddress = await _context.Addresses.FindAsync(model.AddressId);
 
-                    _context.Update(order);
+
+                    //add order to the new address
+                        order.Address = newAddress;
+                        order.AddressId = model.AddressId.Value;
+                    }
+
+                    //if the cart is edited
+                    if(model.Cart.Items != order.Cart.Items)
+                    {
+                        var result = await UpdateCartAsync(model.Cart);
+                        if (!result.IsSuccess)
+                            return new GenericResponse<Order>
+                            {
+                                IsSuccess = false,
+                                Message = result.Message
+                            };
+                    }
                     await _context.SaveChangesAsync();
                     return new GenericResponse<Order> { IsSuccess = true, Message = "Edited Successfully", Result = order };
                 }
@@ -370,14 +437,12 @@ namespace Town_Burger.Services
         {
             try
             {
-                    var order = await _context.Orders.Include(o=>o.Cart).Include(o=>o.Address).FirstOrDefaultAsync(o=>o.Id == orderId);
+                    var order = await _context.Orders.Include(o=>o.Cart).FirstOrDefaultAsync(o=>o.Id == orderId);
                     if (order == null)
                         return new GenericResponse<Order> { IsSuccess = false, Message = "Order not found" };
                 if (order.PlacedIn > DateTime.Now.AddMinutes(-25))
                 {
-                    var customer = await _context.Customers.Include(c=>c.Orders).FirstOrDefaultAsync(c=>c.Id == order.Address.CustomerId);
-                    if (customer == null)
-                        return new GenericResponse<Order> { IsSuccess = false, Message = "address doesnt exist" };
+
                     _context.Remove(order);
                     _context.Remove(order.Cart);
                     await _context.SaveChangesAsync();
@@ -399,26 +464,76 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId)
+        public async Task<GenericResponse<IEnumerable<ReturnedOrder>>> GetOrdersByCustomerId(int customerId)
         {
-            //try
-            //{
-            //    var orders = await _context.Orders.Where(o => o.CustomerId == customerId).ToListAsync();
-            //    if (orders.Count == 0)
-            //        return new GenericResponse<IEnumerable<Order>>
-            //        {
-            //            IsSuccess = true,
-            //            Message = "You dont have any orderes yet"
-            //        };
-            //    return new GenericResponse<IEnumerable<Order>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = orders };
-            //}catch (Exception ex)
-            //{
-                return new GenericResponse<IEnumerable<Order>>
+            try
+            {
+                var orders = await _context.Orders.Include(o=>o.Address).Include(o=>o.Cart).ThenInclude(c=>c.Items).ThenInclude(i=>i.Item).Where(o => o.CustomerId == customerId).ToListAsync();
+                if (orders.Count == 0)
+                    return new GenericResponse<IEnumerable<ReturnedOrder>>
+                    {
+                        IsSuccess = true,
+                        Message = "You dont have any orderes yet"
+                    };
+                var returnedOrders = new List<ReturnedOrder>();
+                foreach (var order in orders)
+                {
+                var returnedCartItems = new List<ReturnedCartItem>();
+                    foreach(var item in order.Cart.Items)
+                    {
+                        returnedCartItems.Add(new ReturnedCartItem
+                        {
+                            ItemId = item.Id,
+                            Item = item.Item,
+                            Description = item.Description,
+                            Quantity = item.Quantity,
+                        });
+                    }
+                    var myCart = new ReturnedCart
+                    {
+                        Id = order.Cart.Id,
+                        Items = returnedCartItems
+                    };
+
+                    returnedOrders.Add(new ReturnedOrder
+                    {
+                        Id = order.Id,
+                        Address = order.Address,
+                        Cart = myCart,
+                        PlacedIn = new MyDate
+                        {
+                            Year = order.PlacedIn.Year,
+                            Month = order.PlacedIn.Month,
+                            Day = order.PlacedIn.Day,
+                            Hour = order.PlacedIn.Hour,
+                            Minute = order.PlacedIn.Minute,
+                            Second = order.PlacedIn.Second,
+                        },
+                        State = order.State,
+                    });
+                    if (order.DeliveredIn.HasValue)
+                    {
+                        returnedOrders.Last().DeliveredIn = new MyDate
+                        {
+                            Year = order.DeliveredIn.Value.Year,
+                            Month = order.DeliveredIn.Value.Month,
+                            Day = order.DeliveredIn.Value.Day,
+                            Hour = order.DeliveredIn.Value.Hour,
+                            Minute = order.DeliveredIn.Value.Minute,
+                            Second = order.DeliveredIn.Value.Second,
+                        };
+                    }
+                }
+                return new GenericResponse<IEnumerable<ReturnedOrder>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = returnedOrders };
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse<IEnumerable<ReturnedOrder>>
                 {
                     IsSuccess = false,
                     Message = "Nigga"
                 };
-            //}
+            }
         }
 
     }

@@ -70,7 +70,7 @@ namespace Town_Burger.Services
 
             var result = await _userManager.CreateAsync(user);
             //succeeded
-            await _userManager.AddToRoleAsync(user, "Employee");
+            await _userManager.AddToRolesAsync(user, new[] { "Employee", "Customer" });
             return new GenericResponse<IEnumerable<IdentityError>>()
             {
                 IsSuccess = true,
