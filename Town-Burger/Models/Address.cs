@@ -11,5 +11,7 @@ namespace Town_Burger.Models
         public string Details { get; set; }
         public int CustomerId { get; set; }
         public Customer? Customer { get; set; }
+
+        public ICollection<Order>? Orders { get;set; }
     }
 }

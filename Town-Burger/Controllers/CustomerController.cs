@@ -89,7 +89,7 @@ namespace Town_Burger.Controllers
         }
 
         [HttpPut("EditOrder")]
-        public async Task<IActionResult> EditOrder(Order order)
+        public async Task<IActionResult> EditOrder(UpdateOrderDto order)
         {
             var result = await _ordersServics.EditOrder(order);
             if (result.IsSuccess)

@@ -1,4 +1,5 @@
 ﻿using EllipticCurve.Utils;
+using MailKit.Search;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography.Xml;
@@ -15,9 +16,9 @@ namespace Town_Burger.Services
 
         Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model);
         Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId);
-        Task<GenericResponse<Order>> PlaceOrder(int customerId, int addressId);
+        Task<GenericResponse<Order>> PlaceOrder(int addressId);
         Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
-        Task<GenericResponse<Order>> EditOrder(Order order);
+        Task<GenericResponse<Order>> EditOrder(UpdateOrderDto model);
         Task<GenericResponse<Order>> DeleteOrder(int orderId);
 
         Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId);
@@ -48,6 +49,13 @@ namespace Town_Burger.Services
             _context.SaveChangesAsync();
             return cart;
         }
+
+
+        //Add migration
+        //fix anything includes orders
+        //fix anything includes addresses
+
+
         public async Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model)
         {
             var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).FirstOrDefaultAsync(c=>c.Id == model.Id);
@@ -107,46 +115,42 @@ namespace Town_Burger.Services
             }
             
         }
-        public async Task<GenericResponse<Order>> PlaceOrder(int customerId, int addressId)
+        public async Task<GenericResponse<Order>> PlaceOrder(int addressId)
         {
             try
             {
-                var customer = await _context.Customers.Include(c=>c.Orders).Include(c=>c.Cart).FirstOrDefaultAsync(c=>c.Id == customerId);
-                if (customer == null)
+                var address = await _context.Addresses.Include(a => a.Orders).Include(a=>a.Customer).FirstOrDefaultAsync(a => a.Id == addressId);
+                if (address == null)
                     return new GenericResponse<Order>
                     {
                         IsSuccess = false,
-                        Message = "Customer doesnt exist"
+                        Message = "Address doesnt exist"
                     };
-                var address = await _context.Addresses.FindAsync(addressId);
                 var _order = new Order()
                 {
-                    Cart = customer.Cart,
-                    CustomerId = customerId,
+                    Cart = address.Customer.Cart,
                     PlacedIn = DateTime.Now,
-                    AddressId = addressId,
-                    Address = address,
                     State = 0
                 };
-                customer.Orders.Add(_order);
+                address.Orders.Add(_order);
                 await _context.SaveChangesAsync();
-                customer.Cart.CustomerId = null;
-                customer.Cart.Customer = null;
-                customer.Cart.OrderId = _order.Id;
-                customer.Cart.Order = _order;
-                customer.Cart = new Cart()
+                address.Customer.Cart.CustomerId = null;
+                address.Customer.Cart.Customer = null;
+                address.Customer.Cart.OrderId = _order.Id;
+                address.Customer.Cart.Order = _order;
+                address.Customer.Cart = new Cart()
                 {
-                    CustomerId = customerId,
+                    CustomerId = address.CustomerId,
                 };
                 await _context.SaveChangesAsync();
-                var _result = await _balanceService.AddDepositAsync(customerId, customer.Cart.TotalPrice);
+                var _result = await _balanceService.AddDepositAsync(address.CustomerId, address.Customer.Cart.TotalPrice);
                 if (!_result.IsSuccess)
                     return new GenericResponse<Order>
                     {
                         IsSuccess = false,
                         Message = _result.Message
                     };
-                var result = await _mailService.SendOrderPlacedEmail(customerId);
+                var result = await _mailService.SendOrderPlacedEmail(address.CustomerId);
                 if (!result.IsSuccess)
                     return new GenericResponse<Order>
                     {
@@ -206,7 +210,7 @@ namespace Town_Burger.Services
         {
             try
             {
-                var order = await _context.Orders.FindAsync(orderId);
+                var order = await _context.Orders.Include(o=>o.Address).FirstOrDefaultAsync(o=>o.Id == orderId);
                 if (order == null)
                     return new GenericResponse<int>
                     {
@@ -218,7 +222,7 @@ namespace Town_Burger.Services
                 await _context.SaveChangesAsync();
                 if (state == 1)
                 {
-                    var result = await _mailService.SendOrderOutEmail(order.CustomerId);
+                    var result = await _mailService.SendOrderOutEmail(order.Address.CustomerId);
                     if (!result.IsSuccess)
                         return new GenericResponse<int>
                         {
@@ -314,7 +318,7 @@ namespace Town_Burger.Services
 
         public async Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId)
         {
-            var order = await _context.Orders.Include(o => o.Customer).FirstOrDefaultAsync(o => o.Id == orderId);
+            var order = await _context.Orders.Include(o => o.Address).ThenInclude(a=>a.Customer).FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null)
                 return new GenericResponse<Order>
                 {
@@ -329,14 +333,20 @@ namespace Town_Burger.Services
             };
         }
 
-        public async Task<GenericResponse<Order>> EditOrder(Order order)
+        public async Task<GenericResponse<Order>> EditOrder(UpdateOrderDto model)
         {
             try
             {
-                if(order.PlacedIn > DateTime.Now.AddMinutes(-15))
+                var address = await _context.Addresses.Include(o => o.Orders).FirstOrDefaultAsync(o => o.Id == model.AddressId);
+                var order = address.Orders.FirstOrDefault(o => o.Id == model.Id);
+
+                //remove order from address and add to the new address
+
+
+                //if order soon
+                if (order.PlacedIn > DateTime.Now.AddMinutes(-15))
                 {
-                    order.Customer = await _context.Customers.Include(c=>c.Cart).FirstOrDefaultAsync(c=>c.Id == order.CustomerId);
-//                    order.Cart = order.Customer.Cart;
+
                     _context.Update(order);
                     await _context.SaveChangesAsync();
                     return new GenericResponse<Order> { IsSuccess = true, Message = "Edited Successfully", Result = order };
@@ -360,14 +370,14 @@ namespace Town_Burger.Services
         {
             try
             {
-                    var order = await _context.Orders.Include(o=>o.Cart).FirstOrDefaultAsync(o=>o.Id == orderId);
+                    var order = await _context.Orders.Include(o=>o.Cart).Include(o=>o.Address).FirstOrDefaultAsync(o=>o.Id == orderId);
                     if (order == null)
                         return new GenericResponse<Order> { IsSuccess = false, Message = "Order not found" };
                 if (order.PlacedIn > DateTime.Now.AddMinutes(-25))
                 {
-                    var customer = await _context.Customers.Include(c=>c.Orders).FirstOrDefaultAsync(c=>c.Id == order.CustomerId);
+                    var customer = await _context.Customers.Include(c=>c.Orders).FirstOrDefaultAsync(c=>c.Id == order.Address.CustomerId);
                     if (customer == null)
-                        return new GenericResponse<Order> { IsSuccess = false, Message = "customer doesnt exist" };
+                        return new GenericResponse<Order> { IsSuccess = false, Message = "address doesnt exist" };
                     _context.Remove(order);
                     _context.Remove(order.Cart);
                     await _context.SaveChangesAsync();
@@ -391,24 +401,24 @@ namespace Town_Burger.Services
 
         public async Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId)
         {
-            try
-            {
-                var orders = await _context.Orders.Where(o => o.CustomerId == customerId).ToListAsync();
-                if (orders.Count == 0)
-                    return new GenericResponse<IEnumerable<Order>>
-                    {
-                        IsSuccess = true,
-                        Message = "You dont have any orderes yet"
-                    };
-                return new GenericResponse<IEnumerable<Order>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = orders };
-            }catch (Exception ex)
-            {
+            //try
+            //{
+            //    var orders = await _context.Orders.Where(o => o.CustomerId == customerId).ToListAsync();
+            //    if (orders.Count == 0)
+            //        return new GenericResponse<IEnumerable<Order>>
+            //        {
+            //            IsSuccess = true,
+            //            Message = "You dont have any orderes yet"
+            //        };
+            //    return new GenericResponse<IEnumerable<Order>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = orders };
+            //}catch (Exception ex)
+            //{
                 return new GenericResponse<IEnumerable<Order>>
                 {
                     IsSuccess = false,
-                    Message = ex.Message,
+                    Message = "Nigga"
                 };
-            }
+            //}
         }
 
     }

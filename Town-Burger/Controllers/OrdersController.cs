@@ -38,13 +38,13 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
         [HttpPost("PlaceOrder")]
-        public async Task<IActionResult> PlaceOrder(int customerId, int addressId)
+        public async Task<IActionResult> PlaceOrder(int addressId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var result = await _ordersService.PlaceOrder(customerId, addressId);
+            var result = await _ordersService.PlaceOrder(addressId);
             if(result.IsSuccess)
             {
                 return Ok(result);
