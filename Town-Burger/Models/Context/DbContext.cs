@@ -32,9 +32,6 @@ namespace Town_Burger.Models.Context
             builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins", "Security");
             builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims", "Security");
             builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens", "Security");
-
-
-
         }
         public virtual DbSet<Balance> Balances { get; set; }
         public virtual DbSet<Deposit> Deposits { get; set; }
@@ -47,8 +44,6 @@ namespace Town_Burger.Models.Context
         public virtual DbSet<Review> Reviews{ get; set; }
         public virtual DbSet<Customer> Customers{ get; set; }
         public virtual DbSet<Employee> Employees{ get; set; }
-        public virtual DbSet<Secondary> Secondaries{ get; set; }
-
-        
+        public virtual DbSet<Secondary> Secondaries{ get; set; }        
     }
 }

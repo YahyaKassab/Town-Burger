@@ -229,6 +229,12 @@ namespace Town_Burger.Services
                         };
                 }
 
+                if(state == 2)
+                {
+                    order.DeliveredIn = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                }
+
                 return new GenericResponse<int>
                 {
                     IsSuccess = true,
@@ -316,7 +322,7 @@ namespace Town_Burger.Services
 
         public async Task<GenericResponse<ReturnedOrder>> GetOrderByIdAsync(int orderId)
         {
-            var order = await _context.Orders.Include(o=>o.Cart).ThenInclude(c=>c.Items).ThenInclude(i=>i.Item).Include(o => o.Address).ThenInclude(a=>a.Customer).FirstOrDefaultAsync(o => o.Id == orderId);
+            var order = await _context.Orders.Include(o=>o.Cart).ThenInclude(c=>c.Items).ThenInclude(i=>i.Item).Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null)
                 return new GenericResponse<ReturnedOrder>
                 {
@@ -324,7 +330,7 @@ namespace Town_Burger.Services
                     Message = "No order with this id"
                 };
             var returnedCartItems = new List<ReturnedCartItem>();
-
+            double total = 0;
             foreach(var item in order.Cart.Items)
             {
                 returnedCartItems.Add(
@@ -337,6 +343,7 @@ namespace Town_Burger.Services
 
                     }
                     );
+                total += item.Quantity * item.Item.Price;
             }
 
             var returnedOrder = new ReturnedOrder
@@ -357,6 +364,7 @@ namespace Town_Burger.Services
                 Items = returnedCartItems
                 },
                 State = order.State,
+                TotalPrice = total,
             };
             if (order.DeliveredIn.HasValue)
             {
@@ -478,6 +486,7 @@ namespace Town_Burger.Services
                 var returnedOrders = new List<ReturnedOrder>();
                 foreach (var order in orders)
                 {
+                double total = 0;
                 var returnedCartItems = new List<ReturnedCartItem>();
                     foreach(var item in order.Cart.Items)
                     {
@@ -488,6 +497,7 @@ namespace Town_Burger.Services
                             Description = item.Description,
                             Quantity = item.Quantity,
                         });
+                        total += item.Quantity* item.Item.Price ;
                     }
                     var myCart = new ReturnedCart
                     {
@@ -510,6 +520,7 @@ namespace Town_Burger.Services
                             Second = order.PlacedIn.Second,
                         },
                         State = order.State,
+                        TotalPrice = total
                     });
                     if (order.DeliveredIn.HasValue)
                     {
