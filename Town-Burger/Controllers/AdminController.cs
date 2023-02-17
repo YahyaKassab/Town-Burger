@@ -85,6 +85,21 @@ namespace Town_Burger.Controllers
 
         #endregion
 
+        #region Menu
+
+        [HttpPost("AddMenuItem")]
+        public async Task<IActionResult> AddMenuItem(MenuItemDto model)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _menuService.AddMenuItemAsync(model);
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        #endregion
+
         //ok
         #region Balance
         //[Authorize(Roles = "Admin")]
@@ -380,6 +395,14 @@ namespace Town_Burger.Controllers
         public async Task<IActionResult> GetMostOrdered()
         {
             var result = await _orderService.GetMostOrdered();
+            if(result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpGet("GetMostOrderedByType")]
+        public async Task<IActionResult> GetMostOrderedByType(string type)
+        {
+            var result = await _orderService.GetMostOrderedByType(type);
             if(result.IsSuccess)
                 return Ok(result);
             return BadRequest(result);

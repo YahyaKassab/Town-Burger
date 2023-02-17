@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Town_Burger.Models;
+using Town_Burger.Models.Context;
 using Town_Burger.Models.Dto;
 using Town_Burger.Services;
 
@@ -11,10 +13,12 @@ namespace Town_Burger.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly IOrdersService _ordersService;
+        private readonly AppDbContext _context;
 
-        public OrdersController(IOrdersService ordersService)
+        public OrdersController(IOrdersService ordersService, AppDbContext context)
         {
             _ordersService = ordersService;
+            _context = context;
         }
 
         [HttpGet("GetCartByCustomerId")]
@@ -50,6 +54,13 @@ namespace Town_Burger.Controllers
                 return Ok(result);
             }
             return BadRequest(result);
+        }
+        [HttpPost("clearcart")]
+        public async Task<IActionResult> clearCart()
+        {
+         var cart = await _context.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == 34);
+            cart.Items.Clear();
+            return Ok(cart);
         }
     }
 }

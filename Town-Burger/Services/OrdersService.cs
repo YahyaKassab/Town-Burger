@@ -15,16 +15,17 @@ namespace Town_Burger.Services
 
 
         Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model);
-        Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId);
+        Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId);
         Task<GenericResponse<Order>> PlaceOrder(int addressId);
-        Task<GenericResponse<ReturnedOrder>> GetOrderByIdAsync(int orderId);
+        Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId);
         Task<GenericResponse<Order>> EditOrder(UpdateOrderDto model);
         Task<GenericResponse<Order>> DeleteOrder(int orderId);
 
-        Task<GenericResponse<IEnumerable<ReturnedOrder>>> GetOrdersByCustomerId(int customerId);
+        Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId);
 
         Task<GenericResponse<int>> UpdateState(int orderId, int state);
         Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered();
+        Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrderedByType(string type);
     }
 
     public class OrdersService : IOrdersService
@@ -59,10 +60,15 @@ namespace Town_Burger.Services
             //cart isnt null
             try
             {
+                    double total = 0;
 
                 //clearing the items
-                _context.RemoveRange(cart.Items);
-                double total = 0;
+                if (cart.Items.Any())
+                {
+                    _context.RemoveRange(cart.Items);
+                    cart.TotalPrice = 0;
+                    _context.SaveChanges();
+                }
                 if(model.Items.Any())
                 {
 
@@ -79,20 +85,18 @@ namespace Town_Burger.Services
                                 Message = "Menu Item Not Found"
                             };
 
-                        cart.Items.Add(new CartItem
-                        {
-                            Item = item,
-                            Quantity = cartItem.Quantity,
-                            CartId = model.Id,
-                            Cart = cart,
-                            Description = cartItem.Description,
-                            MenuItemId = item.Id
-                        });
+                    cart.Items.Add(new CartItem
+                    {
+                        Item = item,
+                        Quantity = cartItem.Quantity,
+                        Description = cartItem.Description,
+                       ItemId = item.Id
+                    });
                         total += cartItem.Quantity * item.Price;
                     }
+
                     cart.TotalPrice = total;
                 }
-                //_context.Update(cart);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<Cart>
                 {
@@ -114,11 +118,10 @@ namespace Town_Burger.Services
         {
             try
             {
-
                 //get the address
                 //with the customer
-                var address = await _context.Addresses.Include(a => a.Orders).FirstOrDefaultAsync(a => a.Id == addressId);
-                var customer = await _context.Customers.Include(c => c.Orders).Include(c => c.Cart).ThenInclude(c => c.Items).FirstOrDefaultAsync(c=>c.Id == address.CustomerId);
+                var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == addressId);
+                var customer = await _context.Customers.Include(c => c.Orders).Include(c => c.Cart).ThenInclude(c => c.Items).ThenInclude(i=>i.Item).FirstOrDefaultAsync(c=>c.Id == address.CustomerId);
                 if (address == null)
                     return new GenericResponse<Order>
                     {
@@ -127,21 +130,29 @@ namespace Town_Burger.Services
                     };
 
                 //create the order
+                var cartItems = new List<CartItem>();
+                double total = 0;
+                foreach(var item in customer.Cart.Items)
+                {
+                    cartItems.Add(item);
+                    total += item.Quantity * item.Item.Price;
+                }
+                customer.Cart.Items.Clear();
+
+
                 var _order = new Order()
                 {
-                    Cart = new Cart
-                    {
-                        Items = customer.Cart.Items,
-                        TotalPrice= customer.Cart.TotalPrice,
-                    },
+                    CartItems = cartItems,
                     PlacedIn = DateTime.Now,
                     AddressId = addressId,
                     Address = address,
+                    TotalPrice= total,
+                    CustomerId=customer.Id,
                 };
                 customer.Orders.Add(_order);
                 _context.CartItems.RemoveRange(customer.Cart.Items.ToList());
                 await _context.SaveChangesAsync();
-                var _result = await _balanceService.AddDepositAsync(address.CustomerId, _order.Cart.TotalPrice);
+                var _result = await _balanceService.AddDepositAsync(address.CustomerId, _order.TotalPrice);
                 if (!_result.IsSuccess)
                     return new GenericResponse<Order>
                     {
@@ -171,35 +182,20 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<ReturnedCart>> GetCartByCustomerId(int customerId)
+        public async Task<GenericResponse<Cart>> GetCartByCustomerId(int customerId)
         {
             var cart = _context.Carts.Include(e=>e.Items).ThenInclude(e=>e.Item).FirstOrDefault(x => x.CustomerId == customerId);
             if (cart == null)
-                return new GenericResponse<ReturnedCart>
+                return new GenericResponse<Cart>
                 {
                     IsSuccess = false,
                     Message = "Cart Doesnt exist",
                 };
-            var items = new List<ReturnedCartItem>();
-            foreach(var item in cart.Items)
-            {
-                items.Add(new ReturnedCartItem
-                {
-                    Description = item.Description,
-                    Item = item.Item,
-                    Quantity = item.Quantity,
-                    ItemId= item.MenuItemId,
-                });
-            }
-            return new GenericResponse<ReturnedCart>
+            return new GenericResponse<Cart>
             {
                 IsSuccess = true,
                 Message = "Cart Got Successfully",
-                Result = new ReturnedCart
-                {
-                    Id = cart.Id,
-                    Items =items
-                }
+                Result = cart
             };
 
         }
@@ -255,39 +251,46 @@ namespace Town_Burger.Services
 
         public async Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrdered()
         {
-            var carts = await _context.Carts.Include(e => e.Order).Include(e=>e.Items).ThenInclude(e=>e.Item).Where(e => e.Order != null && e.Order.PlacedIn > DateTime.Now.AddMonths(-1)).ToListAsync();
-            if (carts.Count == 0)
+
+            //All CartItems ordered in the last month
+            var cartItems = await _context.CartItems.Include(c=>c.Item).Include(c=>c.Order).Where(e => e.OrderId != null && e.Order.PlacedIn > DateTime.Now.AddMonths(-1)).ToListAsync();
+
+            if (cartItems.Count == 0)
                 return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
                 {
-                    IsSuccess = false,
-                    Message = "Failed Or there was no orders in the last month"
+                    IsSuccess = true,
+                    Message = "There was no orders in the last month"
                 };
 
             //fetch success
 
             var ItemsCounter = new List<MostOrderedCounter>();
 
-            foreach(var cart in carts)
+            foreach(var cartItem in cartItems)
             {
-                foreach(var cartItem in cart.Items)
-                {
                         //menu item exists
                     if(ItemsCounter.Exists(item=>item.item.Id == cartItem.Item.Id))
                     {
                         //got my item in the list
                         var ItemInList = ItemsCounter.Find(item => item.item.Id == cartItem.Item.Id);
+
+
                         //increase the counter
                         ItemInList.counter += cartItem.Quantity;
-                    }
-                    //menu item doesnt exist
 
-                    //add the item
-                    ItemsCounter.Add(new MostOrderedCounter()
+
+                    }
+                    else
                     {
-                        counter = cartItem.Quantity,
-                        item = cartItem.Item
-                    });
-                }
+                        //menu item doesnt exist
+
+                        //add the item
+                        ItemsCounter.Add(new MostOrderedCounter()
+                        {
+                            counter = cartItem.Quantity,
+                            item = cartItem.Item
+                        });
+                    }
             }
             var ItemsOrdered = ItemsCounter.OrderByDescending(item => item.counter).ToList();
             if(ItemsOrdered.Count < 3)
@@ -320,69 +323,20 @@ namespace Town_Burger.Services
 
         }
 
-        public async Task<GenericResponse<ReturnedOrder>> GetOrderByIdAsync(int orderId)
+        public async Task<GenericResponse<Order>> GetOrderByIdAsync(int orderId)
         {
-            var order = await _context.Orders.Include(o=>o.Cart).ThenInclude(c=>c.Items).ThenInclude(i=>i.Item).Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
+            var order = await _context.Orders.Include(o=>o.CartItems).ThenInclude(i=>i.Item).Include(o => o.Address).FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null)
-                return new GenericResponse<ReturnedOrder>
+                return new GenericResponse<Order>
                 {
                     IsSuccess = true,
                     Message = "No order with this id"
                 };
-            var returnedCartItems = new List<ReturnedCartItem>();
-            double total = 0;
-            foreach(var item in order.Cart.Items)
-            {
-                returnedCartItems.Add(
-                    new ReturnedCartItem
-                    {
-                        Description = item.Description,
-                        Quantity = item.Quantity,
-                        ItemId = item.MenuItemId,
-                        Item = item.Item
-
-                    }
-                    );
-                total += item.Quantity * item.Item.Price;
-            }
-
-            var returnedOrder = new ReturnedOrder
-            {
-                Id = orderId,
-                PlacedIn = new MyDate
-                {
-                    Year = order.PlacedIn.Year,
-                    Month = order.PlacedIn.Month + 1,
-                    Day = order.PlacedIn.Day,
-                    Hour = order.PlacedIn.Hour,
-                    Minute = order.PlacedIn.Minute,
-                    Second = order.PlacedIn.Second
-                },
-                Address = order.Address,
-                Cart = new ReturnedCart { 
-                Id = order.Cart.Id,
-                Items = returnedCartItems
-                },
-                State = order.State,
-                TotalPrice = total,
-            };
-            if (order.DeliveredIn.HasValue)
-            {
-                returnedOrder.DeliveredIn = new MyDate
-                {
-                    Year = order.DeliveredIn.Value.Year,
-                    Month = order.DeliveredIn.Value.Month + 1,
-                    Day = order.DeliveredIn.Value.Day,
-                    Hour = order.DeliveredIn.Value.Hour,
-                    Minute = order.DeliveredIn.Value.Minute,
-                    Second = order.DeliveredIn.Value.Second
-                };
-            }
-            return new GenericResponse<ReturnedOrder>
+            return new GenericResponse<Order>
             {
                 IsSuccess = true,
                 Message = "Order Fetched Successfully",
-                Result = returnedOrder
+                Result = order
             };
         }
 
@@ -395,33 +349,40 @@ namespace Town_Burger.Services
                 var address = await _context.Addresses.Include(o => o.Orders).FirstOrDefaultAsync(o => o.Id == model.AddressId);
 
                 //order
-                var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == model.Id);
+                var order = await _context.Orders.Include(o=>o.CartItems).FirstOrDefaultAsync(o => o.Id == model.Id);
 
                 //if order soon
                 if (order.PlacedIn > DateTime.Now.AddMinutes(-15))
                 {
                     //if the address is edited
-                    if(model.AddressId != order.AddressId)
+                    if(model.AddressId != order.AddressId && model.AddressId.HasValue)
                     {
-                        //get the new address
-                        var newAddress = await _context.Addresses.FindAsync(model.AddressId);
-
-
                     //add order to the new address
-                        order.Address = newAddress;
                         order.AddressId = model.AddressId.Value;
                     }
+                    
+                    double total = 0;
 
                     //if the cart is edited
-                    if(model.Cart.Items != order.Cart.Items)
+                    if(model.Items != order.CartItems)
                     {
-                        var result = await UpdateCartAsync(model.Cart);
-                        if (!result.IsSuccess)
-                            return new GenericResponse<Order>
+                        _context.CartItems.RemoveRange(order.CartItems);
+
+                        var itemsToAdd = new List<CartItem>();
+                        foreach (var item in model.Items)
+                        {
+                            itemsToAdd.Add(new CartItem
                             {
-                                IsSuccess = false,
-                                Message = result.Message
-                            };
+                                Description = item.Description,
+                                ItemId = item.ItemId,
+                                Quantity = item.Quantity,
+                            });
+                            var menuItem = await _context.MenuItems.FindAsync(item.ItemId);
+
+                            total += item.Quantity * menuItem.Price ;
+                        }
+                        order.TotalPrice = total;
+                        order.CartItems = itemsToAdd;
                     }
                     await _context.SaveChangesAsync();
                     return new GenericResponse<Order> { IsSuccess = true, Message = "Edited Successfully", Result = order };
@@ -445,14 +406,15 @@ namespace Town_Burger.Services
         {
             try
             {
-                    var order = await _context.Orders.Include(o=>o.Cart).FirstOrDefaultAsync(o=>o.Id == orderId);
+                    var order = await _context.Orders.Include(o=>o.CartItems).FirstOrDefaultAsync(o=>o.Id == orderId);
                     if (order == null)
                         return new GenericResponse<Order> { IsSuccess = false, Message = "Order not found" };
+
                 if (order.PlacedIn > DateTime.Now.AddMinutes(-25))
                 {
 
+                    _context.RemoveRange(order.CartItems);
                     _context.Remove(order);
-                    _context.Remove(order.Cart);
                     await _context.SaveChangesAsync();
                     return new GenericResponse<Order> { IsSuccess = true, Message = "removed Successfully", Result = order };
                 }
@@ -472,74 +434,22 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<IEnumerable<ReturnedOrder>>> GetOrdersByCustomerId(int customerId)
+        public async Task<GenericResponse<IEnumerable<Order>>> GetOrdersByCustomerId(int customerId)
         {
             try
             {
-                var orders = await _context.Orders.Include(o=>o.Address).Include(o=>o.Cart).ThenInclude(c=>c.Items).ThenInclude(i=>i.Item).Where(o => o.CustomerId == customerId).ToListAsync();
+                var orders = await _context.Orders.Include(o=>o.Address).Include(o=>o.CartItems).ThenInclude(i=>i.Item).Where(o => o.CustomerId == customerId).ToListAsync();
                 if (orders.Count == 0)
-                    return new GenericResponse<IEnumerable<ReturnedOrder>>
+                    return new GenericResponse<IEnumerable<Order>>
                     {
                         IsSuccess = true,
                         Message = "You dont have any orderes yet"
                     };
-                var returnedOrders = new List<ReturnedOrder>();
-                foreach (var order in orders)
-                {
-                double total = 0;
-                var returnedCartItems = new List<ReturnedCartItem>();
-                    foreach(var item in order.Cart.Items)
-                    {
-                        returnedCartItems.Add(new ReturnedCartItem
-                        {
-                            ItemId = item.Id,
-                            Item = item.Item,
-                            Description = item.Description,
-                            Quantity = item.Quantity,
-                        });
-                        total += item.Quantity* item.Item.Price ;
-                    }
-                    var myCart = new ReturnedCart
-                    {
-                        Id = order.Cart.Id,
-                        Items = returnedCartItems
-                    };
-
-                    returnedOrders.Add(new ReturnedOrder
-                    {
-                        Id = order.Id,
-                        Address = order.Address,
-                        Cart = myCart,
-                        PlacedIn = new MyDate
-                        {
-                            Year = order.PlacedIn.Year,
-                            Month = order.PlacedIn.Month,
-                            Day = order.PlacedIn.Day,
-                            Hour = order.PlacedIn.Hour,
-                            Minute = order.PlacedIn.Minute,
-                            Second = order.PlacedIn.Second,
-                        },
-                        State = order.State,
-                        TotalPrice = total
-                    });
-                    if (order.DeliveredIn.HasValue)
-                    {
-                        returnedOrders.Last().DeliveredIn = new MyDate
-                        {
-                            Year = order.DeliveredIn.Value.Year,
-                            Month = order.DeliveredIn.Value.Month,
-                            Day = order.DeliveredIn.Value.Day,
-                            Hour = order.DeliveredIn.Value.Hour,
-                            Minute = order.DeliveredIn.Value.Minute,
-                            Second = order.DeliveredIn.Value.Second,
-                        };
-                    }
-                }
-                return new GenericResponse<IEnumerable<ReturnedOrder>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = returnedOrders };
+                return new GenericResponse<IEnumerable<Order>> { IsSuccess = true, Message = "Orders fetched Successfully", Result = orders };
             }
             catch (Exception ex)
             {
-                return new GenericResponse<IEnumerable<ReturnedOrder>>
+                return new GenericResponse<IEnumerable<Order>>
                 {
                     IsSuccess = false,
                     Message = "Nigga"
@@ -547,5 +457,78 @@ namespace Town_Burger.Services
             }
         }
 
+        public async Task<GenericResponse<IEnumerable<(MenuItem item, int count)>>> GetMostOrderedByType(string type)
+        {
+
+
+            //All CartItems ordered in the last month
+            var cartItems = await _context.CartItems.Include(c => c.Item).Include(c => c.Order).Where(e => e.OrderId != null && e.Order.PlacedIn > DateTime.Now.AddMonths(-1) && e.Item.Type.ToLower() == type.ToLower()).ToListAsync();
+
+            if (cartItems.Count == 0)
+                return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
+                {
+                    IsSuccess = true,
+                    Message = "There was no orders of this type in the last month"
+                };
+
+            //fetch success
+
+            var ItemsCounter = new List<MostOrderedCounter>();
+
+            foreach (var cartItem in cartItems)
+            {
+                //menu item exists
+                if (ItemsCounter.Exists(item => item.item.Id == cartItem.Item.Id))
+                {
+                    //got my item in the list
+                    var ItemInList = ItemsCounter.Find(item => item.item.Id == cartItem.Item.Id);
+
+
+                    //increase the counter
+                    ItemInList.counter += cartItem.Quantity;
+
+
+                }
+                else
+                {
+                    //menu item doesnt exist
+
+                    //add the item
+                    ItemsCounter.Add(new MostOrderedCounter()
+                    {
+                        counter = cartItem.Quantity,
+                        item = cartItem.Item
+                    });
+                }
+            }
+            var ItemsOrdered = ItemsCounter.OrderByDescending(item => item.counter).ToList();
+            if (ItemsOrdered.Count < 3)
+            {
+                var menuItems = new List<(MenuItem item, int count)>();
+                foreach (var item in ItemsOrdered)
+                {
+                    menuItems.Add((item.item, item.counter));
+                }
+                return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
+                {
+                    IsSuccess = true,
+                    Message = $"Top {ItemsOrdered.Count} Most ordered",
+                    Result = menuItems
+                };
+            }
+
+            //more than 3
+            return new GenericResponse<IEnumerable<(MenuItem item, int count)>>
+            {
+                IsSuccess = true,
+                Message = "Top 3 Most ordered",
+                Result = new (MenuItem item, int count)[]
+                    {
+                        (ItemsOrdered[0].item,ItemsOrdered[0].counter),
+                        (ItemsOrdered[1].item, ItemsOrdered[1].counter),
+                        (ItemsOrdered[2].item, ItemsOrdered[2].counter),
+                    }
+            };
+        }
     }
 }

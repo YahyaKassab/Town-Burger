@@ -8,7 +8,9 @@ namespace Town_Burger.Models
     {
 
         public int Id { get; set; }
-        public Cart? Cart { get; set; }
+        public ICollection<CartItem> CartItems { get; set; }
+
+        public double TotalPrice { get; set; }
         [Required]
         public DateTime PlacedIn { get; set; }
 
@@ -18,9 +20,9 @@ namespace Town_Burger.Models
 
         public int CustomerId { get; set; }
 
-        public Customer? Customer { get; set; }
+        public Customer Customer { get; set; }
 
-        public Address? Address { get; set; }
+        public Address Address { get; set; }
         public int AddressId { get; set; }
     }
 

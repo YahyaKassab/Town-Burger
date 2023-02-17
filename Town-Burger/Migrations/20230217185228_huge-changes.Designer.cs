@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Town_Burger.Models.Context;
 
@@ -11,9 +12,11 @@ using Town_Burger.Models.Context;
 namespace TownBurger.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230217185228_huge-changes")]
+    partial class hugechanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -243,10 +246,10 @@ namespace TownBurger.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ItemId")
+                    b.Property<int>("MenuItemId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("OrderId")
+                    b.Property<int>("OrderId")
                         .HasColumnType("int");
 
                     b.Property<int>("Quantity")
@@ -256,7 +259,7 @@ namespace TownBurger.Migrations
 
                     b.HasIndex("CartId");
 
-                    b.HasIndex("ItemId");
+                    b.HasIndex("MenuItemId");
 
                     b.HasIndex("OrderId");
 
@@ -637,13 +640,15 @@ namespace TownBurger.Migrations
 
                     b.HasOne("Town_Burger.Models.MenuItem", "Item")
                         .WithMany()
-                        .HasForeignKey("ItemId")
+                        .HasForeignKey("MenuItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Town_Burger.Models.Order", "Order")
                         .WithMany("CartItems")
-                        .HasForeignKey("OrderId");
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Cart");
 

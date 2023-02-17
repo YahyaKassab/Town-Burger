@@ -13,12 +13,16 @@ namespace Town_Burger.Controllers
         private readonly ICustomerService _customerService;
         private readonly IReviewService _reviewService;
         private readonly IOrdersService _ordersServics;
+        private readonly ISecondarySevice _secondaryService;
 
-        public CustomerController(ICustomerService customerService, IReviewService reviewService, IOrdersService ordersServics)
+
+        [ActivatorUtilitiesConstructor]
+        public CustomerController(ICustomerService customerService, IReviewService reviewService, IOrdersService ordersServics, ISecondarySevice secondaryService)
         {
             _customerService = customerService;
             _reviewService = reviewService;
             _ordersServics = ordersServics;
+            _secondaryService = secondaryService;
         }
         #region Address
 
@@ -34,10 +38,10 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
         [HttpPut("UpdateAddress")]
-        public async Task<IActionResult> UpdateAddress(Address address)
+        public async Task<IActionResult> UpdateAddress(UpdateAddressDto address)
         {
             // not adding
-            var result = _customerService.UpdateAddress(address);
+            var result = await _customerService.UpdateAddress(address);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -60,6 +64,17 @@ namespace Town_Burger.Controllers
         public async Task<IActionResult> GetAddresses(int id)
         {
             var result = await _customerService.GetAddressesByCustomerId(id);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpGet("GetAddressById")]
+        public async Task<IActionResult> GetAddressById(int id)
+        {
+            var result = await _customerService.GetAddressById(id);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -155,6 +170,33 @@ namespace Town_Burger.Controllers
             }
             return BadRequest(result);
         }
+        #endregion
+
+        #region Secondaries
+        [HttpGet("GetAboutUs")]
+
+        public async Task<IActionResult> GetAboutUs()
+        {
+            var result = await _secondaryService.GetAboutUs();
+            if(result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        [HttpGet("GetPolicies")]
+
+        public async Task<IActionResult> GetPolicies()
+        {
+            var result = await _secondaryService.GetOrderingPolicies();
+            if(result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+
         #endregion
     }
 }

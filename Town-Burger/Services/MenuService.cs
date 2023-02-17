@@ -58,7 +58,6 @@ namespace Town_Burger.Services
                 
         }
 
-        
 
         public async Task<GenericResponse<IEnumerable<MenuItem>>> GetByType(string type)
         {
@@ -163,5 +162,6 @@ namespace Town_Burger.Services
             }
 
         }
+
     }
 }

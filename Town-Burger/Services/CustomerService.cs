@@ -17,11 +17,12 @@ namespace Town_Burger.Services
         //add from the parent table not from the child indepenedently 
 
         Task<GenericResponse<Address>> AddAddressAsync(AddressDto address);
-        GenericResponse<Address> UpdateAddress(Address address);
-        Task<GenericResponse<IEnumerable<ReturnedAddress>>> GetAddressesByCustomerId(int customerId);
+        Task<GenericResponse<Address>> GetAddressById(int id);
+        Task<GenericResponse<Address>> UpdateAddress(UpdateAddressDto address);
+        Task<GenericResponse<IEnumerable<Address>>> GetAddressesByCustomerId(int customerId);
         Task<GenericResponse<string>> DeleteAddressAsync(int addressId);
-        Task<GenericResponse<Customer>> GetCustomerByIdAsync(int id);
-        Task<GenericResponse<IEnumerable<Customer>>> GetAllCustomers();
+        Task<GenericResponse<ReturnedCustomer>> GetCustomerByIdAsync(int id);
+        Task<GenericResponse<IEnumerable<ReturnedCustomer>>> GetAllCustomers();
         Task<GenericResponse<IEnumerable<IdentityError>>> RegisterCustomerAsync(RegisterCustomerDto form);
         Task<GenericResponse<Customer>> UpdateCustomerAsync(Customer customer);
         Task<GenericResponse<string>> DeleteCustomerAsync(int customerId);
@@ -133,26 +134,32 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<Customer>> GetCustomerByIdAsync(int id)
+        public async Task<GenericResponse<ReturnedCustomer>> GetCustomerByIdAsync(int id)
         {
             if (id == null)
-                return new GenericResponse<Customer>()
+                return new GenericResponse<ReturnedCustomer>()
                 {
                     IsSuccess = false,
                     Message = "Id is null"
                 };
-            var result = await _context.Customers.Include(e => e.User).FirstOrDefaultAsync(e => e.Id == id);
-            if (result == null)
-                return new GenericResponse<Customer>()
+            var customer = await _context.Customers.Include(e => e.User).FirstOrDefaultAsync(e => e.Id == id);
+            if (customer == null)
+                return new GenericResponse<ReturnedCustomer>()
                 {
                     IsSuccess = false,
                     Message = "Customer Doesnt exist"
                 };
-            return new GenericResponse<Customer>()
+            return new GenericResponse<ReturnedCustomer>()
             {
                 IsSuccess = true,
                 Message = "Customer fetched successfully",
-                Result = result
+                Result = new ReturnedCustomer
+                {
+                    Id= id,
+                    Email = customer.User.Email,
+                    FullName = customer.FullName,
+                    PhoneNumber = customer.User.PhoneNumber,
+                }
             };
         }
         public async Task<GenericResponse<string>> DeleteCustomerAsync(int customerId)
@@ -223,17 +230,21 @@ namespace Town_Burger.Services
 
         }
 
-        public GenericResponse<Address> UpdateAddress(Address address)
+        public async Task<GenericResponse<Address>> UpdateAddress(UpdateAddressDto address)
         {
             try
             {
-                var result = _context.Update(address);
-                _context.SaveChanges();
+                var _address = await _context.Addresses.FindAsync(address.Id);
+                _address.Street = address.Street;
+                if(address.Details != null)
+                    _address.Details = address.Details;
+
+                await _context.SaveChangesAsync();
                 return new GenericResponse<Address>()
                 {
                     IsSuccess = true,
                     Message = "Address Updated Successfully",
-                    Result = address
+                    Result = _address
                 };
             }
             catch(Exception ex )
@@ -250,13 +261,17 @@ namespace Town_Burger.Services
         {
             try
             {
-                var address = await _context.Addresses.FindAsync(addressId);
+                var address = await _context.Addresses.Include(a=>a.Orders).ThenInclude(o=>o.CartItems).FirstOrDefaultAsync(a=>a.Id == addressId);
                 if (address == null)
                     return new GenericResponse<string>()
                     {
                         IsSuccess = false,
                         Message = "Address Doesnt exist"
                     };
+                var orders = await _context.Orders.Include(o=>o.CartItems).FirstOrDefaultAsync(o=>o.AddressId == addressId);
+                _context.RemoveRange(orders.CartItems);
+                _context.RemoveRange(orders);
+                address.Orders.Clear();
                 _context.Remove(address);
                 await _context.SaveChangesAsync();
                 return new GenericResponse<string>()
@@ -277,26 +292,38 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<IEnumerable<Customer>>> GetAllCustomers()
+        public async Task<GenericResponse<IEnumerable<ReturnedCustomer>>> GetAllCustomers()
         {
             try
             {
                 var customers = await _context.Customers.Include(c=>c.User).ToListAsync();
                 if (customers.Count == 0)
-                    return new GenericResponse<IEnumerable<Customer>>()
+                    return new GenericResponse<IEnumerable<ReturnedCustomer>>()
                     {
                         IsSuccess = false,
                         Message = "No Customers Found",
                     };
-                return new GenericResponse<IEnumerable<Customer>>
+
+                var returnedCustomers = new List<ReturnedCustomer>();
+                foreach (var customer in customers)
+                {
+                    returnedCustomers.Add(new ReturnedCustomer
+                    {
+                        Id = customer.Id,
+                        Email = customer.User.Email,
+                        FullName = customer.FullName,
+                        PhoneNumber = customer.User.PhoneNumber
+                    });
+                }
+                return new GenericResponse<IEnumerable<ReturnedCustomer>>
                 {
                     IsSuccess = true,
                     Message = "Customers fetched successfully",
-                    Result = customers
+                    Result = returnedCustomers
                 };
             }catch (Exception ex)
             {
-                return new GenericResponse<IEnumerable<Customer>>()
+                return new GenericResponse<IEnumerable<ReturnedCustomer>>()
                 {
                     IsSuccess = false,
                     Message = "There was an error"
@@ -304,34 +331,39 @@ namespace Town_Burger.Services
             }
         }
 
-        public async Task<GenericResponse<IEnumerable<ReturnedAddress>>> GetAddressesByCustomerId(int customerId)
+        public async Task<GenericResponse<IEnumerable<Address>>> GetAddressesByCustomerId(int customerId)
         {
             var addresses = await _context.Addresses.Where(a=>a.CustomerId == customerId).ToListAsync();
-            var returnedAddresses = new List<ReturnedAddress>();
-            foreach (var address in addresses)
-            {
-                returnedAddresses.Add(
-                    new ReturnedAddress
-                    {
-                        Id = address.Id,
-                        Details = address.Details,
-                        Street = address.Street,
-                    }
-                    );
-            }
             if (addresses.Count == 0)
-                return new GenericResponse<IEnumerable<ReturnedAddress>>
+                return new GenericResponse<IEnumerable<Address>>
                 {
-                    IsSuccess = false,
+                    IsSuccess = true,
                     Message = "You dont have any addresses"
                 };
-            return new GenericResponse<IEnumerable<ReturnedAddress>>
+            return new GenericResponse<IEnumerable<Address>>
             {
                 IsSuccess = true,
                 Message = "Addresses fetched successfully",
-                Result = returnedAddresses
+                Result = addresses
             };
 
+        }
+
+        public async Task<GenericResponse<Address>> GetAddressById(int id)
+        {
+            var address = await _context.Addresses.FindAsync(id);
+            if (address == null)
+                return new GenericResponse<Address>()
+                {
+                    IsSuccess = false,
+                    Message = "Address Not Found"
+                };
+            return new GenericResponse<Address>()
+            {
+                IsSuccess = true,
+                Message = "Address Fetched Successfully",
+                Result = address
+            };
         }
     }
 }

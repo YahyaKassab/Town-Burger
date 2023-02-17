@@ -10,7 +10,6 @@ namespace Town_Burger.Models.Dto
         [Required]
         public string Type { get; set; }
         public string Description { get; set; }
-        public string? ImageSource { get; set; }
         [Required]
         public double Price { get; set; }
     }

@@ -10,8 +10,8 @@ namespace Town_Burger.Models
         public string Street { get; set; }
         public string Details { get; set; }
         public int CustomerId { get; set; }
-        public Customer? Customer { get; set; }
+        public Customer Customer { get; set; }
 
-        public ICollection<Order>? Orders { get;set; }
+        public ICollection<Order> Orders { get;set; }
     }
 }
