@@ -68,7 +68,7 @@ namespace Town_Burger.Services
             };
             
 
-            var result = await _userManager.CreateAsync(user);
+            var result = await _userManager.CreateAsync(user,form.Password);
             //succeeded
             await _userManager.AddToRolesAsync(user, new[] { "Employee", "Customer" });
             return new GenericResponse<IEnumerable<IdentityError>>()

@@ -47,7 +47,6 @@ namespace Town_Burger.Services
         //fix anything includes orders
         //fix anything includes addresses
 
-
         public async Task<GenericResponse<Cart>> UpdateCartAsync(UpdateCartDto model)
         {
             var cart = await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Item).FirstOrDefaultAsync(c=>c.Id == model.Id);
@@ -137,7 +136,6 @@ namespace Town_Burger.Services
                     cartItems.Add(item);
                     total += item.Quantity * item.Item.Price;
                 }
-                customer.Cart.Items.Clear();
 
 
                 var _order = new Order()
@@ -145,12 +143,12 @@ namespace Town_Burger.Services
                     CartItems = cartItems,
                     PlacedIn = DateTime.Now,
                     AddressId = addressId,
-                    Address = address,
                     TotalPrice= total,
                     CustomerId=customer.Id,
                 };
                 customer.Orders.Add(_order);
-                _context.CartItems.RemoveRange(customer.Cart.Items.ToList());
+                //_context.CartItems.RemoveRange(customer.Cart.Items.ToList());
+                customer.Cart.Items.Clear();
                 await _context.SaveChangesAsync();
                 var _result = await _balanceService.AddDepositAsync(address.CustomerId, _order.TotalPrice);
                 if (!_result.IsSuccess)

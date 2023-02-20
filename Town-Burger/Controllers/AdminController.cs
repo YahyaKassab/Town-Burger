@@ -391,32 +391,6 @@ namespace Town_Burger.Controllers
 
         //ok
         #region Orders 
-        [HttpGet("GetMostOrdered")]
-        public async Task<IActionResult> GetMostOrdered()
-        {
-            var result = await _orderService.GetMostOrdered();
-            if(result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
-        [HttpGet("GetMostOrderedByType")]
-        public async Task<IActionResult> GetMostOrderedByType(string type)
-        {
-            var result = await _orderService.GetMostOrderedByType(type);
-            if(result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
-
-        [HttpGet("GetOrderById")]
-        public async Task<IActionResult> GetOrderById(int orderId)
-        {
-            var result = await _orderService.GetOrderByIdAsync(orderId);
-            if(result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
-
         #endregion
 
         //ok
@@ -439,22 +413,7 @@ namespace Town_Burger.Controllers
             return BadRequest(result);
         }
 
-        [HttpGet("GetAboutUs")]
-        public async Task<IActionResult> GetAboutUs()
-        {
-            var result = await _secondaryService.GetAboutUs();
-            if(result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
-        [HttpGet("GetPolices")]
-        public async Task<IActionResult> GetPolices()
-        {
-            var result = await _secondaryService.GetOrderingPolicies();
-            if(result.IsSuccess)
-                return Ok(result);
-            return BadRequest(result);
-        }
+
 
         #endregion
 

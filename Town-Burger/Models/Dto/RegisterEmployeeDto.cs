@@ -23,8 +23,6 @@ namespace Town_Burger.Models.Dto
         [Required]
         public DateTime ContractEnds { get; set; }
         public string? DaysOfWork { get; set; } = null;
-        public IEnumerable<Deposit>? SpendsEmployee { get; set; } = null;
 
-        public string? PictureSource { get; set; } = null;
     }
 }

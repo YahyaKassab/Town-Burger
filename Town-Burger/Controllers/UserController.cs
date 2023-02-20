@@ -29,21 +29,21 @@ namespace Town_Burger.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("AddCustomer")]
-        public async Task<IActionResult> RegisterCustomerAsync([FromBody]RegisterCustomerDto form)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            if (form == null) return NotFound();
-            var result = await _customerService.RegisterCustomerAsync(form);
-            if (!result.IsSuccess)
-                return BadRequest(result);
-            return Ok(result);
-        }
-        [HttpPost("LoginEmail")]
-        public async Task<IActionResult> LoginAsync(LoginDto form)
+
+        [HttpPost("LoginCustomer")]
+        public async Task<IActionResult> LoginCustomerAsync(LoginDto form)
         {
             if(!ModelState.IsValid) return BadRequest("Some Fields are not valid");
             var result = await _userService.LoginCustomerAsync(form);
+            if(!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+        [HttpPost("LoginEmployee")]
+        public async Task<IActionResult> LoginEmployeeAsync(LoginDto form)
+        {
+            if(!ModelState.IsValid) return BadRequest("Some Fields are not valid");
+            var result = await _userService.LoginEmployeeAsync(form);
             if(!result.IsSuccess)
                 return BadRequest(result);
             return Ok(result);
@@ -80,41 +80,6 @@ namespace Town_Burger.Controllers
                 return BadRequest(result);
 
             return Ok(result);
-        }
-
-        [HttpGet("GetCustomerById")]
-        public async Task<IActionResult> GetCustomerById(int id)
-        {
-            var result = await _customerService.GetCustomerByIdAsync(id);
-            if (!result.IsSuccess)
-                return BadRequest(result);
-            return Ok(result);
-        }
-
-
-        [HttpPut("UpdateCustomer")]
-        public async Task<IActionResult> UpdateCustomer(Customer customer)
-        {
-            var result = await _customerService.UpdateCustomerAsync(customer);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-
-        }
-
-
-        [HttpDelete("RemoveCustomer")]
-        public async Task<IActionResult> RemoveCustomer(int cusomerId)
-        {
-            var result = await _customerService.DeleteCustomerAsync(cusomerId);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-
         }
 
         [HttpPost("SendEmail")]

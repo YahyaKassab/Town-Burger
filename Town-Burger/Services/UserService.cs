@@ -25,6 +25,9 @@ namespace Town_Burger.Services
         Task<GenericResponse<User>> AddToRole(string userId, string roleName);
         Task<GenericResponse<User>> RemoveFromRole(string userId, string roleName);
         Task<GenericResponse<ReturnedCustomer>> LoginCustomerAsync(LoginDto form);
+        Task<GenericResponse<ReturnedEmployee>> LoginEmployeeAsync(LoginDto form);
+
+        Claim[] GetRoleClaims(IEnumerable<string> roles);
         Task<GenericResponse<string>> ConfirmEmailAsync(string userId, string token);
         Task<GenericResponse<string>> ForgetPasswordAsync(string email);
         Task<GenericResponse<string>> ResetPasswordAsync(ResetPasswordDto model);
@@ -50,7 +53,7 @@ namespace Town_Burger.Services
 
 
 
-        //modify customer and employee services
+        //modify employee and employee services
 
 
         public async Task<GenericResponse<User>> AddToRole(string userId, string roleName)
@@ -130,10 +133,7 @@ namespace Town_Burger.Services
             var roles = await _userManager.GetRolesAsync(user);
 
             //Put Them As Claims
-            var rolesClaims = new List<Claim>();
-            foreach (var role in roles)
-                rolesClaims.Add(new Claim(ClaimTypes.Role, role));
-            var roleClaimsAsArray = rolesClaims.ToArray();
+            var roleClaimsAsArray = GetRoleClaims(roles);
 
 
             //Create the claims
@@ -166,12 +166,12 @@ namespace Town_Burger.Services
                 Message = "Logged In Successfully",
                 Result = new ReturnedCustomer
                 {
-                        FullName = customer.FullName,
-                        Email = user.Email,
-                        Id = customer.Id,
-                        PhoneNumber = user.PhoneNumber,
-                        Token = tokenAsString,
-                        ExpireDate = token.ValidTo
+                    FullName = customer.FullName,
+                    Email = user.Email,
+                    Id = customer.Id,
+                    PhoneNumber = user.PhoneNumber,
+                    Token = tokenAsString,
+                    ExpireDate = token.ValidTo
                 }
             };
 
@@ -292,6 +292,102 @@ namespace Town_Burger.Services
             var decodedToken = WebEncoders.Base64UrlDecode(token);
             var normalToken = Encoding.UTF8.GetString(decodedToken);
             return normalToken;
+        }
+
+        public async Task<GenericResponse<ReturnedEmployee>> LoginEmployeeAsync(LoginDto form)
+        {
+
+            var employee = await _context.Employees.Include(e=>e.User).FirstOrDefaultAsync(c => c.User.Email == form.Email);
+
+            if (employee == null)
+                return new GenericResponse<ReturnedEmployee>
+                {
+                    IsSuccess = false,
+                    Message = "Employee not found"
+                };
+
+            if (employee.User == null) return new GenericResponse<ReturnedEmployee>()
+            {
+                IsSuccess = false,
+                Message = "Email Not Found"
+            };
+            //user exists
+
+            var result = await _userManager.CheckPasswordAsync(employee.User, form.Password);
+            if (!result)
+                return new GenericResponse<ReturnedEmployee>()
+                {
+                    IsSuccess = false,
+                    Message = "Wrong Password"
+                };
+
+            //Get the data for the token
+
+
+            //Get the Roles
+            var roles = await _userManager.GetRolesAsync(employee.User);
+
+            //Put Them As Claims
+            var roleClaimsAsArray = GetRoleClaims(roles);
+
+
+            //Create the claims
+            var claims = new Claim[]
+            {
+                new Claim(ClaimTypes.Email,form.Email),
+                new Claim(ClaimTypes.NameIdentifier,employee.User.Id),
+                new Claim(ClaimTypes.MobilePhone,employee.User.PhoneNumber),
+
+            }.Concat(roleClaimsAsArray);
+
+
+            //Create the key
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["AuthSettings:Key"]));
+
+            //Create the token
+            var token = new JwtSecurityToken(
+                issuer: _configuration["AuthSettings:Issuer"],
+                audience: _configuration["AuthSettings:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(1),
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+                );
+
+            //Convert to string
+            string tokenAsString = new JwtSecurityTokenHandler().WriteToken(token);
+            return new GenericResponse<ReturnedEmployee>()
+            {
+                IsSuccess = true,
+                Message = "Logged In Successfully",
+                Result = new ReturnedEmployee
+                {
+                    FullName = employee.FullName,
+                    Email = employee.User.Email,
+                    Id = employee.Id,
+                    PhoneNumber = employee.User.PhoneNumber,
+                    ContractBegins = employee.ContractBegins,
+                    DaysOfWork = employee.DaysOfWork,
+                    ContractEnds = employee.ContractEnds,
+                    Salary = employee.Salary,
+                    Token = tokenAsString,
+                }
+            };
+
+        }
+
+        public Claim[] GetRoleClaims(IEnumerable<string> roles)
+        {
+
+            var rolesClaims = new List<Claim>();
+
+            foreach (var role in roles)
+                rolesClaims.Add(new Claim(ClaimTypes.Role, role));
+
+            var roleClaimsAsArray = rolesClaims.ToArray();
+
+            return roleClaimsAsArray;
+
+
         }
     }
 

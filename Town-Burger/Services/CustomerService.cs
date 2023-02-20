@@ -165,8 +165,8 @@ namespace Town_Burger.Services
         public async Task<GenericResponse<string>> DeleteCustomerAsync(int customerId)
         {
 
-            var customer = await _context.Customers.Include(e=>e.Cart).FirstOrDefaultAsync(e => e.Id == customerId);
-
+            var customer = await _context.Customers.Include(e=>e.Cart).ThenInclude(c=>c.Items).Include(c=>c.User).Include(c=>c.Addresses).Include(c=>c.Reviews).Include(c=>c.DepositsCustomer).FirstOrDefaultAsync(e => e.Id == customerId);
+            var user = customer.User;
 
             if (customer == null)
                 return new GenericResponse<string>
@@ -174,11 +174,35 @@ namespace Town_Burger.Services
                     IsSuccess = false,
                     Message = "Customer Not found"
                 };
-            if(customer.Cart != null)
+            if (customer.Cart != null)
+            {
+                //delete the cart
+                _context.RemoveRange(customer.Cart.Items);
                 _context.Remove(customer.Cart);
-            _context.SaveChanges();
-            var user = await _userManager.FindByIdAsync(customer.UserId);
+            }
+            if(customer.Addresses.Count > 0)
+            {
+                foreach(var address in customer.Addresses)
+                {
+                    //deletes addresses and orders
+                    var result = await DeleteAddressAsync(address.Id);
+                    if (!result.IsSuccess)
+                        return new GenericResponse<string> { IsSuccess = false, Message = "failed to delete the Address" };
+                }
+            }
+            if(customer.Reviews.Count > 0)
+            {
+                //delete the reviews
+                _context.RemoveRange(customer.Reviews);
+            }
+            if(customer.DepositsCustomer.Count > 0)
+            {
+                //delete the deposits
+                _context.RemoveRange(customer.DepositsCustomer);
 
+            }
+
+            await _context.SaveChangesAsync();
             try
             {
                 await _userManager.DeleteAsync(user);
@@ -268,9 +292,20 @@ namespace Town_Burger.Services
                         IsSuccess = false,
                         Message = "Address Doesnt exist"
                     };
-                var orders = await _context.Orders.Include(o=>o.CartItems).FirstOrDefaultAsync(o=>o.AddressId == addressId);
-                _context.RemoveRange(orders.CartItems);
-                _context.RemoveRange(orders);
+                if(address.Orders.Count > 0)
+                {
+                    //delet orders if exist
+                    foreach (var order in address.Orders)
+                    {
+                        if(order.CartItems.Count > 0)
+                        {
+                            _context.RemoveRange(order.CartItems);
+                            order.CartItems.Clear();
+                        }
+                        _context.Remove(order);
+                    }
+                }
+
                 address.Orders.Clear();
                 _context.Remove(address);
                 await _context.SaveChangesAsync();

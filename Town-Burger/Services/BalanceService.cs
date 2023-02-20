@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Immutable;
 using Town_Burger.Models;
 using Town_Burger.Models.Context;
+using Town_Burger.Models.Dto;
 using Town_Burger.Models.Identity;
 using Town_Burger.Models.Responses;
 
@@ -24,7 +25,7 @@ namespace Town_Burger.Services
         Task<GenericResponse<IEnumerable<Deposit>>> GetDepositsDay();
         Task<GenericResponse<IEnumerable<Spend>>> GetSpendsDay();
         Task<GenericResponse<double>> GetEarningsMonth();
-        Task<GenericResponse<IEnumerable<Deposit>>> GetDepositsMonth();
+        Task<GenericResponse<IEnumerable<ReturnedDeposit>>> GetDepositsMonth();
         Task<GenericResponse<IEnumerable<Spend>>> GetSpendsMonth();
         Task<GenericResponse<double>> GetEarningsYear();
         Task<GenericResponse<IEnumerable<Deposit>>> GetDepositsYear();
@@ -67,7 +68,8 @@ namespace Town_Burger.Services
                 Time = DateTime.Now,
             };
 
-            customer.DepositsCustomer.Add(deposit);
+            //customer.DepositsCustomer.Add(deposit);
+            await _context.AddAsync(deposit);
             _balance.TotalDeposits += amount;
             _balance.TotalEarnings += amount;
             await _context.SaveChangesAsync();
@@ -271,14 +273,33 @@ namespace Town_Burger.Services
             };
         }
 
-        public async Task<GenericResponse<IEnumerable<Deposit>>> GetDepositsMonth()
+        public async Task<GenericResponse<IEnumerable<ReturnedDeposit>>> GetDepositsMonth()
         {
-            var deposits = _context.Deposits.Include(d=>d.Customer).Where(e => e.Time > DateTime.Now.AddMonths(-1));
-            return new GenericResponse<IEnumerable<Deposit>>
+            var deposits = _context.Deposits.Include(d=>d.Customer).ThenInclude(c=>c.User).Where(e => e.Time > DateTime.Now.AddMonths(-1));
+
+            var depositsToReturn = new List<ReturnedDeposit>();
+            
+            foreach (var deposit in deposits)
+            {
+                depositsToReturn.Add(
+                    new ReturnedDeposit
+                    {
+                        Amount = deposit.Amount,
+                        CustomerEmail = deposit.Customer.User.Email,
+                        CustomerId = deposit.CustomerId,
+                        CustomerName = deposit.Customer.FullName,
+                        CustomerPhone = deposit.Customer.User.PhoneNumber,
+                        Id = deposit.Id,
+                        Time = deposit.Time,
+                    }
+                    );
+            }
+
+            return new GenericResponse<IEnumerable<ReturnedDeposit>>
             {
                 IsSuccess = true,
                 Message = "Deposits in the last Month are fetched",
-                Result = deposits.ToList()
+                Result = depositsToReturn
             };
         }
 

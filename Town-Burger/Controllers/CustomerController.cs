@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Town_Burger.Models;
 using Town_Burger.Models.Dto;
+using Town_Burger.Models.Identity;
 using Town_Burger.Services;
 
 namespace Town_Burger.Controllers
@@ -24,6 +25,59 @@ namespace Town_Burger.Controllers
             _ordersServics = ordersServics;
             _secondaryService = secondaryService;
         }
+        #region Customers 
+
+        [HttpGet("GetCustomerById")]
+        public async Task<IActionResult> GetCustomerById(int id)
+        {
+            var result = await _customerService.GetCustomerByIdAsync(id);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
+
+        [HttpPost("AddCustomer")]
+        public async Task<IActionResult> RegisterCustomerAsync([FromBody] RegisterCustomerDto form)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (form == null) return NotFound();
+            var result = await _customerService.RegisterCustomerAsync(form);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
+
+        [HttpPut("UpdateCustomer")]
+        public async Task<IActionResult> UpdateCustomer(Customer customer)
+        {
+            var result = await _customerService.UpdateCustomerAsync(customer);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+
+        }
+
+
+        [HttpDelete("RemoveCustomer")]
+        public async Task<IActionResult> RemoveCustomer(int cusomerId)
+        {
+            var result = await _customerService.DeleteCustomerAsync(cusomerId);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+
+        }
+
+
+
+        #endregion
+
         #region Address
 
         [HttpPost("AddAddress")]
@@ -180,7 +234,7 @@ namespace Town_Burger.Controllers
             var result = await _secondaryService.GetAboutUs();
             if(result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(result);  
             }
             return BadRequest(result);
         }

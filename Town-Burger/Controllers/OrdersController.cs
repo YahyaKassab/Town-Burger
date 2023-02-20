@@ -62,5 +62,33 @@ namespace Town_Burger.Controllers
             cart.Items.Clear();
             return Ok(cart);
         }
+
+
+        [HttpGet("GetMostOrdered")]
+        public async Task<IActionResult> GetMostOrdered()
+        {
+            var result = await _ordersService.GetMostOrdered();
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpGet("GetMostOrderedByType")]
+        public async Task<IActionResult> GetMostOrderedByType(string type)
+        {
+            var result = await _ordersService.GetMostOrderedByType(type);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("GetOrderById")]
+        public async Task<IActionResult> GetOrderById(int orderId)
+        {
+            var result = await _ordersService.GetOrderByIdAsync(orderId);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
     }
 }
