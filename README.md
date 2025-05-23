@@ -30,9 +30,4 @@ To run the **Town Burger Backend** locally, follow these steps:
 - **.NET SDK** (v5.0 or higher)
 - **SQL Server** (or another relational DB)
 
-### Installation:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/town-burger-backend.git
-   cd town-burger-backend
